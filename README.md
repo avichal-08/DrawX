@@ -16,8 +16,8 @@ This Turborepo includes the following packages/apps:
 
 ### Apps and Packages
 
-- `http-backend`: an [Express](https://nextjs.org/) app
-- `ws-backend` : a [Web-Socket] app
+- `http-backend`: an [Express](https://expressjs.com/) app
+- `ws-backend` : a [Web-Socket](https://www.npmjs.com/package/ws) app
 - `web`: a [Next.js](https://nextjs.org/) app
 - `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
 - `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
