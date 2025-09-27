@@ -13,15 +13,19 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@repo/configs": "workspace:*",
     "@repo/typescript-config": "workspace:*",
-    "@repo/configs":"workspace:*",
-    "@repo/zod":"workspace:*",
+    "@repo/zod": "workspace:*",
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@types/ws": "^8.18.1",
-    "ws": "^8.18.3",
+    "@types/cookie": "^1.0.0",
     "@types/express": "^5.0.3",
-    "express": "^5.1.0"
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/ws": "^8.18.1",
+    "cookie": "^1.0.2",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "ws": "^8.18.3"
   }
 }
