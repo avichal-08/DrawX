@@ -18,11 +18,21 @@ export const NEXT_AUTH:AuthOptions = {
   },
 
   callbacks: {
-    async session({ session , user }: any) {
-      if (session.user) {
-        session.user.id = user.id;
-        session.user.name = user.name;
-        session.user.email = user.email;
+     jwt: async ({ token,user,account })=>{
+      if (user){
+        token.userId = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.image = user.image;
+      }
+      return token
+    },
+    async session({ session,token }: any) {
+      if (token?.userId) {
+        session.user.id = token.userId as string;
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.image = token.image as string;
       }
       return session;
     },
