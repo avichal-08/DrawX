@@ -42,6 +42,9 @@ importers:
       cookie:
         specifier: ^1.0.2
         version: 1.0.2
+      dotenv:
+        specifier: ^17.2.2
+        version: 17.2.2
       express:
         specifier: ^5.1.0
         version: 5.1.0

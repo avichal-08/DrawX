@@ -18,7 +18,7 @@ export const NEXT_AUTH:AuthOptions = {
   },
 
   callbacks: {
-     jwt: async ({ token,user,account })=>{
+     jwt: async ({ token,user })=>{
       if (user){
         token.userId = user.id;
         token.name = user.name;
