@@ -1,1 +1,0 @@
-export const JWT_SECRET=process.env.NEXT_AUTH_SECRET

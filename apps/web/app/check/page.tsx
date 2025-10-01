@@ -53,7 +53,6 @@ export default async function Check(){
         }
     }
 
-    // Step 3: Use custom token to call protected API
     const res = await fetch("http://localhost:3000", {
         method: "GET",
         headers: {
@@ -75,7 +74,7 @@ export default async function Check(){
     const data = await res.json();
     return(
         <div>
-            <h2>✅ Authentication Successful!</h2>
+            <h2>Authentication Successful!</h2>
             <p>Message: {data.message}</p>
             <p>User: {JSON.stringify(data.user)}</p>
         </div>
