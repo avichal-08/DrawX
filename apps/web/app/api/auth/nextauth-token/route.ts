@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
             secret: process.env.NEXTAUTH_SECRET 
         });
         
-        console.log("NextAuth token from getToken():", token);
         
         if (!token) {
             return NextResponse.json({ error: "No session found" }, { status: 401 });

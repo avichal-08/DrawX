@@ -53,30 +53,31 @@ export default async function Check(){
         }
     }
 
-    const res = await fetch("http://localhost:3000", {
-        method: "GET",
-        headers: {
-            cookie: `token=${customToken}`,
-        },
-        cache: "no-store",
-    });
+    // const res = await fetch("http://localhost:3000", {
+    //     method: "GET",
+    //     headers: {
+    //         cookie: `token=${customToken}`,
+    //     },
+    //     cache: "no-store",
+    // });
 
-    if (!res.ok) {
-        const errorText = await res.text();
-        return (
-            <div>
-                <p>API call failed: {res.status} - {res.statusText}</p>
-                <p>Response: {errorText}</p>
-            </div>
-        );
-    }
+    // if (!res.ok) {
+    //     const errorText = await res.text();
+    //     return (
+    //         <div>
+    //             <p>API call failed: {res.status} - {res.statusText}</p>
+    //             <p>Response: {errorText}</p>
+    //         </div>
+    //     );
+    // }
 
-    const data = await res.json();
+    // const data = await res.json();
     return(
-        <div>
-            <h2>Authentication Successful!</h2>
-            <p>Message: {data.message}</p>
-            <p>User: {JSON.stringify(data.user)}</p>
+        <div className="ml-80 mt-50">
+            <h2 className="bg-black text-white text-xl rounded-2xl p-2 w-80 mb-5">Welcome!</h2>
+            
+            <p className="bg-black text-white text-xl rounded-2xl p-2 w-20 mb-5 cursor-pointer"><a href="/choice">Room</a></p>
+            <a href="/" className="bg-black text-white text-xl rounded-2xl p-2 w-20 cursor-pointer">Home</a>
         </div>
     )
 }
