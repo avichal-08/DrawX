@@ -148,6 +148,10 @@ export function initDraw(
     } else if (shapeMode === "text") {
       finalizeText(startX, startY, (shape) => {
         existingShape.push(shape);
+         socket.send(JSON.stringify({
+          type: "draw-update",
+          data: shape
+        }));
         redraw();
       }, mode);
     }

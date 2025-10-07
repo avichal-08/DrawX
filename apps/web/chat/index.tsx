@@ -3,23 +3,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { FaArrowCircleUp } from "react-icons/fa";
+import type { ChatMessage } from "./types";
 
 type ChatProps = {
   mode: "light" | "dark";
   socket: WebSocket | null;
+  messages: ChatMessage[]
 };
 
-type ChatMessage = {
-  message: string;
-  email?: string;
-  name?: string
-};
-
-export const Chat = ({ mode, socket }: ChatProps) => {
+export const Chat = ({ mode, socket, messages }: ChatProps) => {
   const { data: session } = useSession();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [ currentMessages, setCurrentMessages ] = useState<ChatMessage[]>(messages)
 
   useEffect(() => {
      bottomRef.current?.scrollIntoView({behavior:'smooth'});
@@ -29,7 +25,8 @@ export const Chat = ({ mode, socket }: ChatProps) => {
     const handleMessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "chat-update") {
-        setMessages((prev) => [...prev, msg.data]);
+        setCurrentMessages((prev) => [...prev,msg.data])
+        messages.push(msg.data);
       }
     };
 
@@ -46,13 +43,14 @@ export const Chat = ({ mode, socket }: ChatProps) => {
       email: session?.user?.email || "Anonymous",
       name: session?.user?.name || "Anonymous"
     };
-
-    setMessages((prev) => [...prev, sendData]);
-
+    
+    setCurrentMessages((prev) => [...prev,sendData])
+    
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "chat-update", data: sendData }));
     }
-
+    
+    messages.push(sendData);
     inputRef.current!.value = "";
   };
 
@@ -62,7 +60,7 @@ export const Chat = ({ mode, socket }: ChatProps) => {
         w-90 h-screen flex flex-col px-2`}
     >
       <div className="flex-grow overflow-y-auto space-y-2 p-2">
-        {messages.map((msg, idx) => (
+        {currentMessages.map((msg, idx) => (
           <div
             key={idx}
             className={`${

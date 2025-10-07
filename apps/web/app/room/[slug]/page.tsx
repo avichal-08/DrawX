@@ -13,8 +13,8 @@ import { RiRectangleLine } from "react-icons/ri";
 
 import { initDraw } from "../../../draw";
 import type { Shape } from "../../../draw/types";
+import type { ChatMessage } from "../../../chat/types";
 import { Chat } from "../../../chat"
-import { flushAllTraces } from "next/dist/trace";
 
 export default function Whiteboard() {
 
@@ -23,6 +23,7 @@ export default function Whiteboard() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const shapesRef = useRef<Shape[]>([]);
+  const messagesRef = useRef<ChatMessage[]>([]);
 
   const [chat, setChat] = useState(true);
   const [mode, setMode] = useState<"dark" | "light">("dark");
@@ -114,7 +115,7 @@ export default function Whiteboard() {
       />
     </div>
     {chat&&<div className="absolute z-1 top-0 right-0">
-      <Chat mode={mode} socket={socket}/>
+      <Chat mode={mode} socket={socket} messages={messagesRef.current}/>
     </div>}
     </div>
   );
