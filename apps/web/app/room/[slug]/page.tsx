@@ -16,8 +16,8 @@ import { RiRectangleLine } from "react-icons/ri";
 
 import { initDraw } from "../../../draw";
 import type { Shape } from "../../../draw/types";
-import type { ChatMessage } from "../../../chat/types";
 import { Chat } from "../../../chat";
+import { useDebouncedStrokeSave } from "../../../draw/dbFunctions";
 
 export default function Whiteboard() {
 
@@ -34,6 +34,7 @@ export default function Whiteboard() {
   const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const saveStroke = useDebouncedStrokeSave(roomId as string, isAdmin);
 
   const RoomCheck = async () => {
     try{
@@ -53,7 +54,9 @@ export default function Whiteboard() {
     }
   };
 
-  RoomCheck();
+  useEffect(() => {
+    RoomCheck();
+  }, [roomId, session]);
 
    useEffect(() => {
     const ws = new WebSocket("ws://localhost:3000");
@@ -76,6 +79,20 @@ export default function Whiteboard() {
   }, []);
 
   useEffect(() => {
+    strokeFetch();
+  },[])
+
+  const strokeFetch = async () => {
+    try {
+      const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
+      const strokes = res.data.strokes;
+      shapesRef.current = strokes;
+    }catch(error){
+      console.log(`Error while fetching strokes: ${error}`);
+    }
+  }
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !socket) return;
 
@@ -83,10 +100,19 @@ export default function Whiteboard() {
     canvas.height = window.innerHeight - 2;
 
 
-    const cleanup = initDraw(canvas, mode, shapeMode, shapesRef.current, socket);
+    const cleanup = initDraw(
+      canvas, 
+      mode, 
+      shapeMode, 
+      shapesRef.current, 
+      socket, 
+      isAdmin, 
+      roomId as string,
+      saveStroke
+    );
 
     return cleanup;
-  }, [mode, shapeMode]);
+  }, [mode, shapeMode, socket, isAdmin]);
 
   if (status === "loading") {
     return <p className="text-2xl ml-140 mt-60">Loading...</p>;

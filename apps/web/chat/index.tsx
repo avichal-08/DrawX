@@ -69,7 +69,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
   };
 
   const sendChatDB = async (sendData: ChatMessage) => {
-    await axios.post('/api/chat/create',{
+    await axios.post('/api/chat/save',{
       slug,
       message: sendData.message,
       senderName: sendData.name,

@@ -9,8 +9,12 @@ export function initDraw(
   mode: "light" | "dark",
   shapeMode: "rect" | "circle" | "line" | "text" | "pan",
   existingShape: Shape[],
-  socket: WebSocket | null
+  socket: WebSocket | null,
+  isAdmin: boolean,
+  roomId: string,
+  saveStroke: any
 ) {
+
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
@@ -131,27 +135,34 @@ export function initDraw(
       type: "draw-update",
       data: shape
     }));
-    } else if (shapeMode === "circle") {
+    if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
+    } 
+    else if (shapeMode === "circle") {
       const shape = finalizeCircle(startX, startY, endX, endY);
       existingShape.push(shape);
       socket.send(JSON.stringify({
       type: "draw-update",
       data: shape
     }));
-    } else if (shapeMode === "line") {
+     if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
+    } 
+    else if (shapeMode === "line") {
       const shape = finalizeLine(startX, startY, endX, endY);
       existingShape.push(shape);
       socket.send(JSON.stringify({
       type: "draw-update",
       data: shape
     }));
-    } else if (shapeMode === "text") {
+     if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
+    } 
+    else if (shapeMode === "text") {
       finalizeText(startX, startY, (shape) => {
         existingShape.push(shape);
          socket.send(JSON.stringify({
           type: "draw-update",
           data: shape
         }));
+        if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
         redraw();
       }, mode);
     }
