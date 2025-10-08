@@ -57,12 +57,6 @@ DATABASE_URL="postgresql://username:password@localhost:5432/drawx"
 NEXTAUTH_SECRET="your-secret"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Optional: S3 Storage (if using for image uploads or exports)
-S3_ENDPOINT=""
-S3_ACCESS_KEY=""
-S3_SECRET_KEY=""
-S3_BUCKET=""
-
 ```
 ### 4. Setup the Database
 ##### Run Prisma migrations to initialize your database schema (inside packages/db):
