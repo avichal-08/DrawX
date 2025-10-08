@@ -4,21 +4,35 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { FaArrowCircleUp } from "react-icons/fa";
 import type { ChatMessage } from "./types";
+import axios from "axios";
 
 type ChatProps = {
   mode: "light" | "dark";
   socket: WebSocket | null;
-  messages: ChatMessage[]
+  slug: string
 };
 
-export const Chat = ({ mode, socket, messages }: ChatProps) => {
+export const Chat = ({ mode, socket, slug }: ChatProps) => {
   const { data: session } = useSession();
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [ currentMessages, setCurrentMessages ] = useState<ChatMessage[]>(messages)
+  const [currentMessages, setCurrentMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
-     bottomRef.current?.scrollIntoView({behavior:'smooth'});
+    const fetchChat = async () => {
+      const res = await axios.get(`/api/chat/get?slug=${slug}`);
+      const dbChat = res.data.filteredChat;
+      setCurrentMessages(dbChat);
+    };
+    fetchChat();
+  }, [slug]);
+  
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [currentMessages]);
+
+
+  useEffect(() => {
 
     if (!socket) return;
 
@@ -26,7 +40,6 @@ export const Chat = ({ mode, socket, messages }: ChatProps) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "chat-update") {
         setCurrentMessages((prev) => [...prev,msg.data])
-        messages.push(msg.data);
       }
     };
 
@@ -49,10 +62,20 @@ export const Chat = ({ mode, socket, messages }: ChatProps) => {
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "chat-update", data: sendData }));
     }
-    
-    messages.push(sendData);
+
+    sendChatDB(sendData);
+
     inputRef.current!.value = "";
   };
+
+  const sendChatDB = async (sendData: ChatMessage) => {
+    await axios.post('/api/chat/create',{
+      slug,
+      message: sendData.message,
+      senderName: sendData.name,
+      senderEmail: sendData.email
+    });
+  }
 
   return (
     <div

@@ -17,8 +17,6 @@ model User{
   createdAt        DateTime @default(now())
   accounts         Account[]
   rooms            Room[]
-  strokes          Stroke[]
-  chats             Chat[]
 }
 
 model Account {
@@ -53,10 +51,7 @@ model Room{
 
 model Stroke{
   id            String       @id @default(uuid())
-  data        String
-  userName      String
-  userId        String
-  user          User         @relation(fields: [userId],references: [id])
+  data          String
   roomId        String
   room          Room         @relation(fields: [roomId],references: [id])
   createdAt     DateTime     @default(now())
@@ -65,9 +60,8 @@ model Stroke{
 model Chat{
   id            String      @id @default(uuid())
   message       String
-  userName      String
-  userId        String
-  user          User         @relation(fields: [userId],references: [id])
+  senderName    String
+  senderEmail   String
   roomId        String
   room          Room         @relation(fields: [roomId],references: [id])
   createdAt     DateTime     @default(now())

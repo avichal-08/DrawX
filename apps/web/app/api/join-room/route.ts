@@ -5,12 +5,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { slug } = body;
 
-    if(!slug){
-        return NextResponse.json({message: "No slug found"}, { status: 400 });
+    if (!slug || typeof slug !== "string") {
+      return NextResponse.json({ message: "Invalid slug" }, { status: 400 });
     }
 
     try {
-        const user = await prismaClient.user.findFirst({
+        const roomAdmin = await prismaClient.user.findFirst({
         where: {
             rooms: {
                 some: { slug },
@@ -18,12 +18,15 @@ export async function POST(req: NextRequest) {
         },
     });
 
-    if(user) {
-        return NextResponse.json({
-            found: true,
-            adminName: user?.name
-        });
+    if (!roomAdmin) {
+      return NextResponse.json({ found: false }, { status: 404 });
     }
+    
+    return NextResponse.json({
+        found: true,
+        adminEmail: roomAdmin?.email
+    });
+
     }catch(error) {
         console.error(error);
         return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });

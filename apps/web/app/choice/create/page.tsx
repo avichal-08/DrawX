@@ -22,8 +22,8 @@ export default function Create() {
 
     try{
       const res = await axios.post("/api/create-room",{
-        name:nameRef.current?.value,
-        ID
+        name: nameRef.current?.value,
+        adminID: ID
       });
       setSlug(res.data.roomSlug);
     }catch(error){

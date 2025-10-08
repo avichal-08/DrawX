@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import { GoSidebarExpand } from "react-icons/go";
 import { GoSidebarCollapse } from "react-icons/go";
@@ -14,21 +17,43 @@ import { RiRectangleLine } from "react-icons/ri";
 import { initDraw } from "../../../draw";
 import type { Shape } from "../../../draw/types";
 import type { ChatMessage } from "../../../chat/types";
-import { Chat } from "../../../chat"
+import { Chat } from "../../../chat";
 
 export default function Whiteboard() {
 
   const params = useParams();
   const roomId = params.slug;
+  const router = useRouter();
+  const { data: session, status } = useSession();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const shapesRef = useRef<Shape[]>([]);
-  const messagesRef = useRef<ChatMessage[]>([]);
 
   const [chat, setChat] = useState(true);
   const [mode, setMode] = useState<"dark" | "light">("dark");
   const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  const RoomCheck = async () => {
+    try{
+      const res = await axios.post("/api/join-room",{
+        slug: roomId
+      });
+      if(!res.data.found){
+        router.push(`/choice`)
+      }
+      else{
+        if( session?.user.email === res.data.adminEmail){
+          setIsAdmin(true);
+        }
+      }
+    }catch(error){
+      console.log("Something went wrong in room's page.tsx");
+    }
+  };
+
+  RoomCheck();
 
    useEffect(() => {
     const ws = new WebSocket("ws://localhost:3000");
@@ -62,6 +87,14 @@ export default function Whiteboard() {
 
     return cleanup;
   }, [mode, shapeMode]);
+
+  if (status === "loading") {
+    return <p className="text-2xl ml-140 mt-60">Loading...</p>;
+  }
+
+  if( status === "unauthenticated") {
+    router.push('/');
+  }
 
   return (
     <div className="relative">
@@ -115,7 +148,7 @@ export default function Whiteboard() {
       />
     </div>
     {chat&&<div className="absolute z-1 top-0 right-0">
-      <Chat mode={mode} socket={socket} messages={messagesRef.current}/>
+      <Chat mode={mode} socket={socket} slug={roomId as string}/>
     </div>}
     </div>
   );

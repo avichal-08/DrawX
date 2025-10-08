@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import axios from "axios";
 
 export default function Join() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const router = useRouter();
   const slugRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);

@@ -5,10 +5,10 @@ import Slug from "../../lib/slug";
 export async function POST(req: NextRequest){
     try{
         const body = await req.json();
-        const { name, ID } = body;
+        const { name, adminID } = body;
 
-        if (!name || !ID) {
-            return NextResponse.json({ error: "Missing name of room or ID" }, { status: 400 });
+        if (!name || !adminID || typeof name !== "string" || typeof adminID !== "string") {
+            return NextResponse.json({ error: "Invalid room or Admin ID" }, { status: 400 });
         }
 
         const slug = await Slug(name);
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest){
             data: {
                 name,
                 slug,
-                adminId: ID
+                adminId: adminID
             }
         });
 
