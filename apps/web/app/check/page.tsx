@@ -52,32 +52,13 @@ export default async function Check(){
             );
         }
     }
-
-    // const res = await fetch("http://localhost:3000", {
-    //     method: "GET",
-    //     headers: {
-    //         cookie: `token=${customToken}`,
-    //     },
-    //     cache: "no-store",
-    // });
-
-    // if (!res.ok) {
-    //     const errorText = await res.text();
-    //     return (
-    //         <div>
-    //             <p>API call failed: {res.status} - {res.statusText}</p>
-    //             <p>Response: {errorText}</p>
-    //         </div>
-    //     );
-    // }
-
-    // const data = await res.json();
     return(
-        <div className="ml-80 mt-50">
-            <h2 className="bg-black text-white text-xl rounded-2xl p-2 w-80 mb-5">Welcome!</h2>
-            
-            <p className="bg-black text-white text-xl rounded-2xl p-2 w-20 mb-5 cursor-pointer"><a href="/choice">Room</a></p>
-            <a href="/" className="bg-black text-white text-xl rounded-2xl p-2 w-20 cursor-pointer">Home</a>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-neutral-900 text-white">
+            <h2 className=" text-6xl md:text-7xl bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-500 bg-clip-text text-transparent font-semibold animate-pulse hover:scale-120 transition">Welcome!</h2>
+            <div className="flex mt-5 gap-4">
+                <p className="bg-orange-500 text-2xl rounded-2xl p-2 w-fit font-semibold cursor-pointer shadow-white shadow-xs hover:scale-105 transition"><a href="/choice">Room</a></p>
+                <a href="/" className="bg-orange-500 text-2xl rounded-2xl p-2 w-fit font-semibold cursor-pointer shadow-white shadow-xs hover:scale-105 transition">Home</a>
+            </div>
         </div>
     )
 }

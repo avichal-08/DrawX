@@ -29,11 +29,10 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
   
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    inputRef.current?.focus();
   }, [currentMessages]);
 
-
   useEffect(() => {
-
     if (!socket) return;
 
     const handleMessage = (event: MessageEvent) => {
@@ -79,10 +78,10 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
 
   return (
     <div
-      className={`${mode === "light" ? "bg-white border-2" : "bg-gray-900/40 text-white"}
+      className={`${mode === "light" ? "bg-slate-100" : "bg-neutral-900 text-white"}
         w-90 h-screen flex flex-col px-2`}
     >
-      <div className="flex-grow overflow-y-auto space-y-2 p-2">
+      <div className="flex-grow overflow-y-scroll scrollbar-hide space-y-2 p-2">
         {currentMessages.map((msg, idx) => (
           <div
             key={idx}
@@ -92,12 +91,12 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
                 : "text-left text-gray-300"
             }`}
           >
-            <span className={`${mode === "light"?"text-black":""} text-xs opacity-70`}>{msg.name}</span>
-            <div className={`${mode === "light"?"text-black":""} text-xl`}>{msg.message}</div>
+            <span className={`${mode === "light"?"text-black":""} text-xs opacity-70 break-all [overflow-wrap:anywhere]`}>{msg.name}</span>
+            <div className={`${mode === "light"?"text-black":""} text-xl break-all [overflow-wrap:anywhere]`}>{msg.message}</div>
           </div>
         ))}
-      </div>
       <div ref={bottomRef}></div>
+      </div>
 
       <div className="flex items-center gap-2 mb-4">
         <input
@@ -105,9 +104,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
           type="text"
           placeholder="Message"
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          className={`${
-            mode === "light" ? "bg-gray-300" : "bg-white text-black"
-          } h-10 p-2 flex-grow rounded-2xl`}
+          className={`${mode === "light" ? "bg-gray-300" : "bg-white text-black"} h-10 p-2 flex-grow rounded-2xl focus:outline-none`}
         />
         <div className="cursor-pointer" onClick={sendMessage}>
           <FaArrowCircleUp size={25} />

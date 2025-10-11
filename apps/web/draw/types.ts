@@ -26,4 +26,13 @@ export type Shape = {
     x: number; 
     y: number; 
     text: string 
+} | {
+    type: "arrow";
+    startX: number;
+    startY: number;
+    endX: number;
+    endY: number;
+} | {
+    type: "pencil";
+    points: { x: number; y: number }[]
 };

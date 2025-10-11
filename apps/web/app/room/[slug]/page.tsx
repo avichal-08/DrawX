@@ -1,55 +1,63 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
-import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import axios from "axios";
 
-import { GoSidebarExpand } from "react-icons/go";
-import { GoSidebarCollapse } from "react-icons/go";
-import { PiHandGrabbingDuotone } from "react-icons/pi";
-import { CiText } from "react-icons/ci";
+import { AiOutlineMessage } from "react-icons/ai";
+import { CiLocationArrow1, CiText } from "react-icons/ci";
 import { FaRegCircle } from "react-icons/fa";
-import { MdDarkMode } from "react-icons/md";
-import { MdLightMode } from "react-icons/md";
+import { MdDarkMode, MdLightMode } from "react-icons/md";
 import { RiRectangleLine } from "react-icons/ri";
+import { LuPencil } from "react-icons/lu";
+import { IoPeopleSharp } from "react-icons/io5";
 
 import { initDraw } from "../../../draw";
 import type { Shape } from "../../../draw/types";
 import { Chat } from "../../../chat";
 import { useDebouncedStrokeSave } from "../../../draw/dbFunctions";
+import { Joined } from "../../../alerts/joined";
+import { Left } from "../../../alerts/left";
+import type { existingClients } from "../../../alerts/participants/types";
+import { Participants } from "../../../alerts/participants";
 
 export default function Whiteboard() {
-
   const params = useParams();
   const roomId = params.slug;
   const router = useRouter();
   const { data: session, status } = useSession();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const existingClientsRef = useRef<existingClients[]>([]);
   const shapesRef = useRef<Shape[]>([]);
+  const joinedRef = useRef<{ email: string; name: string }>(null);
+  const leftRef = useRef<{ email: string; name: string }>(null);
+  const joinedTimeout = useRef<NodeJS.Timeout | null>(null);
+  const leftTimeout = useRef<NodeJS.Timeout | null>(null);
+  const offsetX = useRef(0);
+  const offsetY = useRef(0);
+  const panStartX = useRef(0);
+  const panStartY = useRef(0);
 
-  const [chat, setChat] = useState(true);
+  const [joined, setJoined] = useState(false);
+  const [left, setLeft] = useState(false);
+  const [participants, setParticipants] = useState(false);
+  const [chat, setChat] = useState(false);
   const [mode, setMode] = useState<"dark" | "light">("dark");
-  const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan">("rect");
+  const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const saveStroke = useDebouncedStrokeSave(roomId as string, isAdmin);
 
   const RoomCheck = async () => {
-    try{
-      const res = await axios.post("/api/join-room",{
-        slug: roomId
-      });
-      if(!res.data.found){
-        router.push(`/choice`)
-      }
-      else{
-        if( session?.user.email === res.data.adminEmail){
-          setIsAdmin(true);
-        }
-      }
-    }catch(error){
+    try {
+      const res = await axios.post("/api/join-room", { slug: roomId });
+      if (!res.data.found) 
+        router.push(`/choice`);
+      else if (session?.user.email === res.data.adminEmail) 
+        setIsAdmin(true);
+    } catch (error) {
       console.log("Something went wrong in room's page.tsx");
     }
   };
@@ -58,124 +66,165 @@ export default function Whiteboard() {
     RoomCheck();
   }, [roomId, session]);
 
-   useEffect(() => {
+  useEffect(() => {
+    if (status !== "authenticated") return;
     const ws = new WebSocket("ws://localhost:3000");
+
     ws.onopen = () => {
-      ws.send(JSON.stringify({ 
-        type: "join-room",
-        roomId,
-        data: ""
-      }));
-      console.log("WebSocket connected")
+      const email = session?.user.email;
+      const name = session?.user.name;
+      if (!email || !name) return;
+      ws.send(
+        JSON.stringify({ type: "join-room", roomId, data: "", email, name })
+      );
+      console.log("WebSocket connected");
     };
+
+    ws.onmessage = (event: MessageEvent) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "room-joined") {
+        joinedRef.current = { email: msg.email, name: msg.name };
+        existingClientsRef.current = msg.existingClients;
+        setJoined(true);
+        if (joinedTimeout.current) clearTimeout(joinedTimeout.current);
+        joinedTimeout.current = setTimeout(() => setJoined(false), 2000);
+      }
+      if (msg.type === "existing-client")
+        existingClientsRef.current = msg.existingClients;
+      if (msg.type === "room-left") {
+        leftRef.current = { email: msg.email, name: msg.name };
+        existingClientsRef.current = msg.existingClients;
+        setLeft(true);
+        if (leftTimeout.current) clearTimeout(leftTimeout.current);
+        leftTimeout.current = setTimeout(() => setLeft(false), 2000);
+      }
+    };
+
+    setSocket(ws);
     ws.onclose = () => console.log("WebSocket disconnected");
     ws.onerror = (err) => console.log("WebSocket error:", err);
 
-    setSocket(ws);
-
-    return () => {
-      ws.close();
-    };
-  }, []);
+    return () => ws.close();
+  }, [status, session, roomId]);
 
   useEffect(() => {
-    strokeFetch();
-  },[])
-
-  const strokeFetch = async () => {
-    try {
-      const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
-      const strokes = res.data.strokes;
-      shapesRef.current = strokes;
-    }catch(error){
-      console.log(`Error while fetching strokes: ${error}`);
-    }
-  }
+    const fetchStrokes = async () => {
+      try {
+        const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
+        shapesRef.current = res.data.strokes;
+      } catch (error) {
+        console.log(`Error fetching strokes: ${error}`);
+      }
+    };
+    fetchStrokes();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !socket) return;
 
-    canvas.width = window.innerWidth - 2;
-    canvas.height = window.innerHeight - 2;
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth - 2;
+      canvas.height = window.innerHeight - 2;
+    };
 
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
 
     const cleanup = initDraw(
-      canvas, 
-      mode, 
-      shapeMode, 
-      shapesRef.current, 
-      socket, 
-      isAdmin, 
+      canvas,
+      mode,
+      shapeMode,
+      shapesRef.current,
+      socket,
+      isAdmin,
       roomId as string,
-      saveStroke
+      saveStroke,
+      panStartX,
+      panStartY,
+      offsetX,
+      offsetY
     );
 
-    return cleanup;
+    return () => {
+      window.removeEventListener("resize", resizeCanvas);
+      if(cleanup)
+        cleanup();
+    };
   }, [mode, shapeMode, socket, isAdmin]);
 
-  if (status === "loading") {
-    return <p className="text-2xl ml-140 mt-60">Loading...</p>;
-  }
-
-  if( status === "unauthenticated") {
-    router.push('/');
-  }
+  if (status === "loading") return <p className="text-2xl mt-40 text-center">Loading...</p>;
+  if (status === "unauthenticated") router.push("/");
 
   return (
-    <div className="relative">
-    <div className={`${shapeMode === "pan" ? "cursor-grab" : "cursor-default"} w-full h-screen relative`}>
-      {!chat&&<div className={`${mode==="dark"?"text-white":""} absolute top-2 right-2 cursor-pointer`} onClick={()=>setChat(true)}>
-        <GoSidebarExpand size={25}/>
-      </div>}
-
-      {chat&&<div className={`${mode==="dark"?"text-white":""} absolute top-2 right-90 cursor-pointer`} onClick={()=>setChat(false)}>
-        <GoSidebarCollapse size={25}/>
-      </div>}
-
-      <div className={`absolute bottom-4 ${chat ? "left-70": "left-110"} flex gap-1 z-10 bg-gray-300 rounded-2xl px-4 py-1 border-2`}>
-      
+    <div className="relative w-full h-screen overflow-hidden ">
+      <div className={`absolute top-2 right-2 flex flex-col gap-2 z-20`}>
         <button
-          className={`bg-white text-black text-lg rounded-2xl px-2 py-1 cursor-pointer shadow-2xl`}
-          onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+          className={`p-2 rounded-full cursor-pointer text-white`}
+          onClick={() => setChat(!chat)}
         >
-          {mode === "dark"?<MdLightMode size={25}/>:<MdDarkMode size={25}/>}
-        </button>
-      
-        <button
-          className={`${shapeMode === "pan"?"bg-black text-white":"bg-white text-black"}  text-lg rounded-2xl px-4 py-2 cursor-pointer shadow`}
-          onClick={() => {setShapeMode("pan");}}> <PiHandGrabbingDuotone size={35}/>
+          <AiOutlineMessage size={24} />
         </button>
         <button
-
-          className={`${shapeMode === "circle"?"bg-black text-white":"bg-white text-black"}  text-lg rounded-2xl px-4 py-2 cursor-pointer shadow`}
-          onClick={() => {setShapeMode("circle");}}><FaRegCircle size={25}/>
-        </button>
-
-        <button
-          className={`${shapeMode === "line"?"bg-black text-white":"bg-white  text-black"}  text-2xl font-extrabold rounded-2xl px-4 py-2 cursor-pointer shadow`}
-          onClick={() => {setShapeMode("line");}}> /
-        </button>
-
-        <button
-          className={`${shapeMode === "rect"?"bg-black text-white":"bg-white text-black"}  text-lg rounded-2xl px-4 py-2 cursor-pointer shadow`}
-          onClick={() => {setShapeMode("rect");}}><RiRectangleLine size={28}/>
-        </button>
-
-        <button
-          className={`${shapeMode === "text"?"bg-black text-white":"bg-white text-black"}  text-lg rounded-2xl px-4 py-2 cursor-pointer shadow`}
-          onClick={() => {setShapeMode("text");}}> <CiText size={25}/>
+          className={`p-2 rounded-full text-white cursor-pointer`}
+          onClick={() => setParticipants(!participants)}
+        >
+          <IoPeopleSharp size={24} />
         </button>
       </div>
 
-      <canvas
-        ref={canvasRef}
-        className="border border-gray-400 w-full h-full"
-      />
-    </div>
-    {chat&&<div className="absolute z-1 top-0 right-0">
-      <Chat mode={mode} socket={socket} slug={roomId as string}/>
-    </div>}
+      <div
+        className={`fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-gray-300 border-2 border-gray-400 rounded-2xl px-2 py-1 sm:px-4 sm:py-2 shadow-lg z-1`}
+      >
+        <button
+          className="text-black rounded-xl px-2 py-1 cursor-pointer"
+          onClick={() => setMode(mode === "dark" ? "light" : "dark")}
+        >
+          {mode === "dark" ? <MdLightMode size={24} /> : <MdDarkMode size={24} />}
+        </button>
+
+        {[
+          { key: "circle", icon: <FaRegCircle size={22} /> },
+          { key: "line", icon: <span className="text-2xl font-bold">/</span> },
+          { key: "rect", icon: <RiRectangleLine size={22} /> },
+          { key: "arrow", icon: <CiLocationArrow1 size={22} /> },
+          { key: "pencil", icon: <LuPencil size={22} /> },
+          { key: "text", icon: <CiText size={22} /> },
+        ].map((btn) => (
+          <button
+            key={btn.key}
+            className={`rounded-xl px-3 py-1 cursor-pointer ${
+              shapeMode === btn.key ? "bg-black text-white" : "text-black"
+            }`}
+            onClick={() => setShapeMode(btn.key as any)}
+          >
+            {btn.icon}
+          </button>
+        ))}
+      </div>
+
+      <canvas ref={canvasRef} className="w-full h-full" />
+
+      {chat && (
+        <div className={`absolute w-screen  bg-slate-700 top-0 right-0 md:w-[30%] h-full shadow-lg z-10 md:z-10`}>
+          <Chat mode={mode} socket={socket} slug={roomId as string} />
+        </div>
+      )}
+      {joined && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-1">
+          <Joined name={joinedRef.current?.name!} email={joinedRef.current?.email!} />
+        </div>
+      )}
+      {left && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-1">
+          <Left name={leftRef.current?.name!} email={leftRef.current?.email!} />
+        </div>
+      )}
+      {participants && (
+        <div className={`w-screen md:w-[20%] absolute top-25 md:top-16 right-0 ${chat?" md:right-[30%]":"md:right-15"} rounded-2xl z-11 bg-white shadow-lg`}>
+          <Participants existingClients={existingClientsRef.current} />
+        </div>
+      )}
     </div>
   );
 }
