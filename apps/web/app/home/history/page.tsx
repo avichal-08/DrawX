@@ -44,9 +44,11 @@ export default function AllRooms() {
   if (status !== "authenticated") router.push("/");
 
   if (loading) {
-    <div className="flex items-center justify-center mt-[20%]">
-      <Loader/>
-    </div>
+    return (
+      <div className="flex items-center justify-center mt-[20%]">
+        <Loader/>
+      </div>
+    )
   }
 
   return (

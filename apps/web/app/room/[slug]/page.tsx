@@ -48,6 +48,8 @@ export default function Whiteboard() {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const socketUrl = process.env.NEXT_PUBLIC_WS_URL;
+
   const saveStroke = useDebouncedStrokeSave(roomId as string, isAdmin);
 
   const RoomCheck = async () => {
@@ -68,7 +70,7 @@ export default function Whiteboard() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    const ws = new WebSocket("ws://localhost:3000");
+    const ws = new WebSocket(`${socketUrl}`);
 
     ws.onopen = () => {
       const email = session?.user.email;
