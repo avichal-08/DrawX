@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Menu, X, Zap, Users, History, MessageSquare, ChevronRight, Moon, Sun } from 'lucide-react';
+import { Loader } from "@repo/ui/loader";
 
 export default function LandingPage() {
 
   const router = useRouter();
-  const { data: session } = useSession(); 
+  const { data: session, status } = useSession(); 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -49,6 +50,14 @@ export default function LandingPage() {
     { name: "Turborepo", color: "from-red-500 to-pink-600" },
     { name: "TypeScript", color: "from-blue-400 to-blue-600" }
   ];
+
+  if ( status === "loading") {
+    return (
+      <div className='flex items-center justify-center mt-[20%]'>
+        <Loader/>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen transition-colors duration-300 bg-gray-950 text-white">
@@ -112,9 +121,9 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a onClick={() => {
                 if(!session)
-                  signIn(undefined, { callbackUrl: "/check" })
+                  signIn(undefined, { callbackUrl: "/home" })
                 else 
-                  router.push('/choice')
+                  router.push('/home')
                 }} className="group relative px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105 flex items-center cursor-pointer">
                 Join Now
                 <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -198,7 +207,7 @@ export default function LandingPage() {
               <h2 className="text-4xl sm:text-5xl font-bold mb-6">Start creating with DrawX today!</h2>
               <a onClick={() => {
                 if(!session)
-                  signIn(undefined, { callbackUrl: "/check" })
+                  signIn(undefined, { callbackUrl: "/home" })
                 else 
                   router.push('/choice')
                 }} className=" cursor-pointer inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105">

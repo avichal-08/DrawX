@@ -39,5 +39,6 @@ export async function POST(req: NextRequest)  {
 
    }catch(error){
     console.log("Error while creating chats in db")
+    return NextResponse.json({ message: "Chat message not saved in DB due internal server error" }, { status: 500 });
    }
 };
