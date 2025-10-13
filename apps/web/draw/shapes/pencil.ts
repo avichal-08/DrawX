@@ -13,12 +13,14 @@ export function previewPencil(
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  ctx.moveTo(points[0].x, points[0].y);
-  for (let i = 1; i < points.length; i++) {
-    ctx.lineTo(points[i].x, points[i].y);
+  if(points[0]){
+    ctx.moveTo(points[0].x, points[0].y);
+    for (let i = 1; i < points.length; i++) {
+      if(points[i])
+        ctx.lineTo(points[i]!.x, points[i]!.y);
+      }
+      ctx.stroke();
   }
-
-  ctx.stroke();
 }
 
 export function finalizePencil(points: { x: number; y: number }[]): Shape {
