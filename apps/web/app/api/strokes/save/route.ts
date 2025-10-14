@@ -1,6 +1,6 @@
-// pages/api/strokes/save.ts
+
 import { NextRequest, NextResponse } from "next/server";
-import { prismaClient } from "@repo/db/client";
+import { prismaClient } from "@repo/db";
 
 export async function POST(req: NextRequest) {
   try {
