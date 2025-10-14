@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prismaClient } from "@repo/db/client";
+import { prismaClient } from "@repo/db";
 import Slug from "../../lib/slug";
 
 export async function POST(req: NextRequest){
