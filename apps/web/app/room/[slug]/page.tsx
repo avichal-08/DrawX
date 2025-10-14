@@ -48,7 +48,7 @@ export default function Whiteboard() {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const socketUrl = process.env.NEXT_PUBLIC_WS_URL;
+  // const socketUrl = process.env.NEXT_WS_URL;
 
   const saveStroke = useDebouncedStrokeSave(roomId as string, isAdmin);
 
@@ -70,7 +70,7 @@ export default function Whiteboard() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    const ws = new WebSocket(`${socketUrl}`);
+    const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
 
     ws.onopen = () => {
       const email = session?.user.email;
