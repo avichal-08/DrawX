@@ -12,8 +12,7 @@
     "typescript": "^5.2.2"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./client": "./dist/index.js"
+    ".": "./dist/index.js"
   },
   "keywords": [],
   "author": "",
