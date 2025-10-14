@@ -1,4 +1,4 @@
-import { prismaClient } from "@repo/db/client";
+import { prismaClient } from "@repo/db";
 
 export default async function Slug(title: string) {
   let slug = title.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
