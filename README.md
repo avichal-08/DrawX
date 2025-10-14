@@ -107,5 +107,5 @@ If you have a new idea, feature, or bug fix, open an issue or PR — collaborati
 If you like **DrawX**, give it a ⭐ on GitHub!  
 Because every star helps this project draw more attention 😉  
 
-> _“Collaboration starts with a single line — make yours with DrawX.”_
+> _“Collaboration starts with a single line , make yours with DrawX.”_
 
