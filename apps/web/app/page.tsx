@@ -209,7 +209,7 @@ export default function LandingPage() {
                 if(!session)
                   signIn(undefined, { callbackUrl: "/home" })
                 else 
-                  router.push('/choice')
+                  router.push('/home')
                 }} className=" cursor-pointer inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105">
                 Get Started Free
                 <ChevronRight className="w-5 h-5 ml-2" />
