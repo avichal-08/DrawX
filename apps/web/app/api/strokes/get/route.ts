@@ -20,8 +20,14 @@ export async function GET(req: NextRequest)  {
   });
 
   if(room){
-   const strokes = room.strokes.map(s => JSON.parse(s.data));
-    return NextResponse.json({ strokes }, { status: 200 });
+   const strokesDetail = room.strokes.map(s => {
+    const dbstroke = JSON.parse(s.data);
+    return {
+      strokeId: s.strokeId,
+      shape: dbstroke
+    }
+  });
+    return NextResponse.json({ strokesDetail }, { status: 200 });
   }
 
   return NextResponse.json({ message: "Room not found" },{ status: 400 });

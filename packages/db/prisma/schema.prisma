@@ -52,6 +52,7 @@ model Room{
 
 model Stroke{
   id            String       @id @default(uuid())
+  strokeId      String?      @unique
   data          String
   roomId        String
   room          Room         @relation(fields: [roomId],references: [id])

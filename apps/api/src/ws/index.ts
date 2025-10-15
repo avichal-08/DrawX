@@ -1,10 +1,10 @@
-import { WebSocketServer,  WebSocket } from "ws";
+import { WebSocketServer, WebSocket } from "ws";
 import crypto from "crypto";
 
 export function WebSkt(server: any) {
   const wss = new WebSocketServer({ server });
 
-  const clients = new Map<string, { socket: WebSocket; roomId: string | null; clientId: string; name: string | null; email: string | null;}>();
+  const clients = new Map<string, { socket: WebSocket; roomId: string | null; clientId: string; name: string | null; email: string | null; }>();
   const rooms = new Map<string, Set<string>>();
 
   wss.on("connection", (socket) => {
@@ -21,7 +21,7 @@ export function WebSkt(server: any) {
 
         switch (type) {
           case "join-room":
-            if (!rooms.has(roomId)) 
+            if (!rooms.has(roomId))
               rooms.set(roomId, new Set());
 
             client.roomId = roomId;
@@ -29,15 +29,15 @@ export function WebSkt(server: any) {
             client.email = email;
 
             const room = rooms.get(roomId);
-            if(room){
+            if (room) {
               room.add(clientId);
             }
 
             var existingClients = [];
-            if(room){
-              for( const id of room) {
+            if (room) {
+              for (const id of room) {
                 const c = clients.get(id);
-                if(c && c.socket.readyState === WebSocket.OPEN){
+                if (c && c.socket.readyState === WebSocket.OPEN) {
                   const name = c.name;
                   const email = c.email;
                   existingClients.push({
@@ -77,6 +77,7 @@ export function WebSkt(server: any) {
 
           case "draw-update":
           case "chat-update":
+          case "erase-update":
 
             const roomClients = rooms.get(client.roomId as string);
             if (roomClients) {
@@ -105,33 +106,33 @@ export function WebSkt(server: any) {
       clients.delete(clientId);
 
       var existingClients = [];
-            if(room){
-              for( const id of room) {
-                const c = clients.get(id);
-                if(c && c.socket.readyState === WebSocket.OPEN){
-                  const name = c.name;
-                  const email = c.email;
-                  existingClients.push({
-                    name,
-                    email
-                  });
-                }
-              }
-            }
+      if (room) {
+        for (const id of room) {
+          const c = clients.get(id);
+          if (c && c.socket.readyState === WebSocket.OPEN) {
+            const name = c.name;
+            const email = c.email;
+            existingClients.push({
+              name,
+              email
+            });
+          }
+        }
+      }
 
       if (room && client) {
-              for (const id of room) {
-                const c = clients.get(id);
-                if (c && c.socket.readyState === WebSocket.OPEN) {
-                  c.socket.send(JSON.stringify({
-                    type: "room-left",
-                    name: client.name,
-                    email: client.email,
-                    existingClients
-                  }));
-                }
-              }
-            }
+        for (const id of room) {
+          const c = clients.get(id);
+          if (c && c.socket.readyState === WebSocket.OPEN) {
+            c.socket.send(JSON.stringify({
+              type: "room-left",
+              name: client.name,
+              email: client.email,
+              existingClients
+            }));
+          }
+        }
+      }
 
 
 

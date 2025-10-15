@@ -11,11 +11,13 @@ import { MdDarkMode, MdLightMode } from "react-icons/md";
 import { RiRectangleLine } from "react-icons/ri";
 import { LuPencil } from "react-icons/lu";
 import { IoPeopleSharp } from "react-icons/io5";
+import { LuEraser } from "react-icons/lu";
 
 import { initDraw } from "../../../draw";
-import type { Shape } from "../../../draw/types";
+import type { ShapeDetail } from "../../../draw/types";
 import { Chat } from "../../../chat";
-import { useDebouncedStrokeSave } from "../../../draw/dbFunctions";
+import { useDebouncedStrokeSave } from "../../../draw/dbFunctions/strokeSave";
+import { useEraseStroke } from "../../../draw/dbFunctions/eraseStroke";
 import { Joined } from "../../../alerts/joined";
 import { Left } from "../../../alerts/left";
 import type { existingClients } from "../../../alerts/participants/types";
@@ -29,7 +31,7 @@ export default function Whiteboard() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const existingClientsRef = useRef<existingClients[]>([]);
-  const shapesRef = useRef<Shape[]>([]);
+  const shapesRef = useRef<ShapeDetail[]>([]);
   const joinedRef = useRef<{ email: string; name: string }>(null);
   const leftRef = useRef<{ email: string; name: string }>(null);
   const joinedTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -44,13 +46,14 @@ export default function Whiteboard() {
   const [participants, setParticipants] = useState(false);
   const [chat, setChat] = useState(false);
   const [mode, setMode] = useState<"dark" | "light">("dark");
-  const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil">("rect");
+  const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil" | "eraser">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   // const socketUrl = process.env.NEXT_WS_URL;
 
   const saveStroke = useDebouncedStrokeSave(roomId as string, isAdmin);
+  const eraseStroke = useEraseStroke(roomId as string, isAdmin);
 
   const RoomCheck = async () => {
     try {
@@ -70,7 +73,7 @@ export default function Whiteboard() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
+    const ws = new WebSocket("ws://localhost:3000");
 
     ws.onopen = () => {
       const email = session?.user.email;
@@ -113,7 +116,7 @@ export default function Whiteboard() {
     const fetchStrokes = async () => {
       try {
         const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
-        shapesRef.current = res.data.strokes;
+        shapesRef.current = res.data.strokesDetail;
       } catch (error) {
         console.log(`Error fetching strokes: ${error}`);
       }
@@ -142,6 +145,7 @@ export default function Whiteboard() {
       isAdmin,
       roomId as string,
       saveStroke,
+      eraseStroke,
       panStartX,
       panStartY,
       offsetX,
@@ -192,6 +196,7 @@ export default function Whiteboard() {
           { key: "arrow", icon: <CiLocationArrow1 size={22} /> },
           { key: "pencil", icon: <LuPencil size={22} /> },
           { key: "text", icon: <CiText size={22} /> },
+          { key: "eraser", icon: <LuEraser size={22} /> },
         ].map((btn) => (
           <button
             key={btn.key}

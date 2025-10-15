@@ -1,13 +1,14 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { prismaClient } from "@repo/db";
+
+import { ShapeDetail } from "../../../../draw/types";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { slug, strokes } = body;
+    const { slug, strokesDetail } = body;
 
-    if (!slug || !strokes || !Array.isArray(strokes)) {
+    if (!slug || !strokesDetail || !Array.isArray(strokesDetail)) {
       return NextResponse.json({ message: "Invalid data" }, { status: 400 });
     }
 
@@ -17,8 +18,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Room not found" }, { status: 404 });
     }
 
-    const strokeRecords = strokes.map((stroke: any) => ({
-      data: JSON.stringify(stroke),
+    const strokeRecords = strokesDetail.map((stroke: ShapeDetail) => ({
+      strokeId: stroke.strokeId,
+      data: JSON.stringify(stroke.shape),
       roomId: room.id,
     }));
 

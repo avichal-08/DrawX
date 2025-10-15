@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import axios from "axios";
+import type { ShapeDetail } from "../types";
 
 export function useDebouncedStrokeSave(slug: string, isAdmin: boolean) {
   const pendingStrokes = useRef<any[]>([]);
@@ -7,8 +8,8 @@ export function useDebouncedStrokeSave(slug: string, isAdmin: boolean) {
 
   if(!isAdmin) return;
 
-  const addStroke = (stroke: any) => {
-    pendingStrokes.current.push(stroke);
+  const addStroke = (strokeDetail: ShapeDetail) => {
+    pendingStrokes.current.push(strokeDetail);
 
     if (timer.current) clearTimeout(timer.current);
 
@@ -18,7 +19,7 @@ export function useDebouncedStrokeSave(slug: string, isAdmin: boolean) {
       try {
         await axios.post("/api/strokes/save", {
           slug,
-          strokes: pendingStrokes.current,
+          strokesDetail: pendingStrokes.current,
         });
         pendingStrokes.current = [];
       } catch (err) {

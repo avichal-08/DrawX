@@ -4,24 +4,29 @@ import { previewLine, finalizeLine } from "./shapes/line";
 import { previewText, finalizeText } from "./shapes/text";
 import { previewArrow, finalizeArrow } from "./shapes/arrow";
 import { previewPencil, finalizePencil } from "./shapes/pencil";
+import { findStrokeUnderCursor } from './eraser'
 
-import type { Shape } from "./types";
+import type { ShapeDetail } from "./types";
+
 import React from "react";
 
 export function initDraw(
   canvas: HTMLCanvasElement,
   mode: "light" | "dark",
-  shapeMode: "rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil",
-  existingShape: Shape[],
+  shapeMode: "rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil" | "eraser",
+  existingShape: ShapeDetail[],
   socket: WebSocket | null,
   isAdmin: boolean,
   roomId: string,
   saveStroke: any,
+  eraseStroke: any,
   panStartX: React.RefObject<number>,
   panStartY: React.RefObject<number>,
   offsetX: React.RefObject<number>,
   offsetY: React.RefObject<number>
 ) {
+
+  const generateId = () => crypto.randomUUID?.() || self.crypto.randomUUID?.() || Math.random().toString(36).substring(2, 15);
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -36,7 +41,7 @@ export function initDraw(
   const black = "rgba(18, 18, 19, 1)";
 
   function redraw() {
-    if(ctx) {
+    if (ctx) {
       ctx.save();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = mode === "light" ? white : black;
@@ -44,9 +49,11 @@ export function initDraw(
 
       ctx.translate(offsetX.current, offsetY.current);
 
-      existingShape.forEach((shape) => {
+      (existingShape).forEach((shapeDetail) => {
         ctx.strokeStyle = mode === "light" ? black : white;
         ctx.fillStyle = mode === "light" ? black : white;
+
+        const shape = shapeDetail.shape;
 
         if (shape.type === "rect") {
           ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
@@ -87,7 +94,7 @@ export function initDraw(
 
           const pts = shape.points;
           if (pts.length > 1) {
-            if(pts[0]) {
+            if (pts[0]) {
               ctx.moveTo(pts[0].x, pts[0].y);
               for (let i = 1; i < pts.length; i++) {
                 if (pts[i]) {
@@ -112,6 +119,24 @@ export function initDraw(
     if (msg.type === "draw-update") {
       existingShape.push(msg.data);
       redraw();
+      saveStroke({
+        strokeId: msg.data.strokeId,
+        shape: msg.data.shape
+      });
+    }
+
+    if (msg.type === "erase-update") {
+      const eraseStrokeId = msg.data.strokeId;
+
+      const index = existingShape.findIndex(s => s.strokeId === eraseStrokeId);
+      if (index !== -1) {
+        existingShape.splice(index, 1);
+      }
+      redraw();
+
+      if (isAdmin) {
+        eraseStroke(eraseStrokeId);
+      }
     }
   };
 
@@ -126,6 +151,31 @@ export function initDraw(
       isDrawing = true;
       startX = e.clientX - offsetX.current;
       startY = e.clientY - offsetY.current;
+    }
+
+    if (shapeMode === "eraser") {
+      if (!(socket && socket.readyState === WebSocket.OPEN)) return;
+      const strokeToDelete = findStrokeUnderCursor(existingShape, e.clientX, e.clientY);
+      if (!strokeToDelete) return;
+
+      const index = existingShape.findIndex(s => s.strokeId === strokeToDelete.strokeId);
+      if (index !== -1) {
+        existingShape.splice(index, 1);
+      }
+      redraw();
+
+      socket.send(
+        JSON.stringify({
+          type: "erase-update",
+          data: {
+            strokeId: strokeToDelete.strokeId
+          }
+        })
+      );
+
+      if (isAdmin) {
+        eraseStroke(strokeToDelete.strokeId);
+      }
     }
 
     if (shapeMode === "pencil") {
@@ -173,7 +223,7 @@ export function initDraw(
 
   const handleMouseUp = (e: MouseEvent) => {
 
-    if (!(socket && socket.readyState === WebSocket.OPEN)) return; 
+    if (!(socket && socket.readyState === WebSocket.OPEN)) return;
 
     if (isPanning) {
       isPanning = false;
@@ -187,61 +237,121 @@ export function initDraw(
 
     if (shapeMode === "rect") {
       const shape = (finalizeRect(startX, startY, endX, endY));
-      existingShape.push(shape);
+      const genId = generateId();
+      existingShape.push({
+        strokeId: genId,
+        shape
+      });
       socket.send(JSON.stringify({
-      type: "draw-update",
-      data: shape
-    }));
-    if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
-    } 
+        type: "draw-update",
+        data: {
+        strokeId: genId,
+        shape
+      }
+      }));
+      if (isAdmin && typeof saveStroke === "function") saveStroke({
+        strokeId: genId,
+        shape
+      });
+    }
     else if (shapeMode === "circle") {
       const shape = finalizeCircle(startX, startY, endX, endY);
-      existingShape.push(shape);
+      const genId = generateId();
+      existingShape.push({
+        strokeId: genId,
+        shape
+      });
       socket.send(JSON.stringify({
-      type: "draw-update",
-      data: shape
-    }));
-     if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
-    } 
+        type: "draw-update",
+        data: {
+        strokeId: genId,
+        shape
+      }
+      }));
+      if (isAdmin && typeof saveStroke === "function") saveStroke({
+        strokeId: genId,
+        shape
+      });
+    }
     else if (shapeMode === "line") {
       const shape = finalizeLine(startX, startY, endX, endY);
-      existingShape.push(shape);
+      const genId = generateId();
+      existingShape.push({
+        strokeId: genId,
+        shape
+      });
       socket.send(JSON.stringify({
-      type: "draw-update",
-      data: shape
-    }));
-     if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
-    } 
+        type: "draw-update",
+        data: {
+          strokeId: genId,
+          shape
+        }
+      }));
+      if (isAdmin && typeof saveStroke === "function") saveStroke({
+        strokeId: genId,
+        shape
+      });
+    }
     else if (shapeMode === "arrow") {
       const shape = finalizeArrow(startX, startY, endX, endY);
-      existingShape.push(shape);
+      const genId = generateId();
+      existingShape.push({
+        strokeId: genId,
+        shape
+      });
       socket.send(
         JSON.stringify({
           type: "draw-update",
-          data: shape,
+          data: {
+            strokeId: genId,
+            shape
+          }
         })
       );
-      if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
+      if (isAdmin && typeof saveStroke === "function") saveStroke({
+        strokeId: genId,
+        shape
+      });
     }
     else if (shapeMode === "text") {
       finalizeText(startX, startY, (shape) => {
-        existingShape.push(shape);
-         socket.send(JSON.stringify({
+        const genId = generateId();
+        existingShape.push({
+          strokeId: genId,
+          shape
+        });
+        socket.send(JSON.stringify({
           type: "draw-update",
-          data: shape
+          data: {
+            strokeId: genId,
+            shape
+          }
         }));
-        if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
+        if (isAdmin && typeof saveStroke === "function") saveStroke({
+          strokeId: genId,
+          shape
+        });
         redraw();
       }, mode);
     }
     else if (shapeMode === "pencil") {
       const shape = finalizePencil(pencilPoints);
-      existingShape.push(shape);
+      const genId = generateId();
+      existingShape.push({
+        strokeId: genId,
+        shape
+      });
       socket.send(JSON.stringify({
         type: "draw-update",
-        data: shape
+        data: {
+          strokeId: genId,
+          shape
+        }
       }));
-      if (isAdmin && typeof saveStroke === "function") saveStroke(shape);
+      if (isAdmin && typeof saveStroke === "function") saveStroke({
+        strokeId: genId,
+        shape
+      });
       pencilPoints = [];
     }
 
