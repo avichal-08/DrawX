@@ -166,13 +166,13 @@ export default function Whiteboard() {
     <div className="relative w-full h-screen overflow-hidden ">
       <div className={`absolute top-2 right-2 flex flex-col gap-2 z-20`}>
         <button
-          className={`p-2 rounded-full cursor-pointer text-white`}
+          className={`p-2 rounded-full cursor-pointer ${mode==="dark"? "text-white":"text-black"}`}
           onClick={() => setChat(!chat)}
         >
           <AiOutlineMessage size={24} />
         </button>
         <button
-          className={`p-2 rounded-full text-white cursor-pointer`}
+          className={`p-2 rounded-full ${mode==="dark"? "text-white":"text-black"} cursor-pointer`}
           onClick={() => setParticipants(!participants)}
         >
           <IoPeopleSharp size={24} />
