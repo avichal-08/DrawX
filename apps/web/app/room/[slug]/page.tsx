@@ -10,7 +10,7 @@ import { FaRegCircle } from "react-icons/fa";
 import { MdDarkMode, MdLightMode } from "react-icons/md";
 import { RiRectangleLine } from "react-icons/ri";
 import { LuPencil } from "react-icons/lu";
-import { IoPeopleSharp } from "react-icons/io5";
+import { GoPeople } from "react-icons/go";
 import { LuEraser } from "react-icons/lu";
 import { FiDownload } from "react-icons/fi";
 
@@ -179,7 +179,7 @@ export default function Whiteboard() {
           className={`p-2 rounded-full ${mode === "dark" ? "text-white" : "text-black"} cursor-pointer`}
           onClick={() => setParticipants(!participants)}
         >
-          <IoPeopleSharp size={24} />
+          <GoPeople size={24} />
         </button>
         <button
           className={`p-2 rounded-full ${mode === "dark" ? "text-white" : "text-black"} cursor-pointer`}
