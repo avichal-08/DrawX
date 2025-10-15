@@ -12,6 +12,7 @@ import { RiRectangleLine } from "react-icons/ri";
 import { LuPencil } from "react-icons/lu";
 import { IoPeopleSharp } from "react-icons/io5";
 import { LuEraser } from "react-icons/lu";
+import { FiDownload } from "react-icons/fi";
 
 import { initDraw } from "../../../draw";
 import type { ShapeDetail } from "../../../draw/types";
@@ -22,6 +23,7 @@ import { Joined } from "../../../alerts/joined";
 import { Left } from "../../../alerts/left";
 import type { existingClients } from "../../../alerts/participants/types";
 import { Participants } from "../../../alerts/participants";
+import { handleDownload } from "../../../draw/download";
 
 export default function Whiteboard() {
   const params = useParams();
@@ -49,6 +51,8 @@ export default function Whiteboard() {
   const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil" | "eraser">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState<"pdf" | "png" | "jpg">("jpg");
+  const [download, setDownload] = useState<boolean>(false);
 
   // const socketUrl = process.env.NEXT_WS_URL;
 
@@ -58,9 +62,9 @@ export default function Whiteboard() {
   const RoomCheck = async () => {
     try {
       const res = await axios.post("/api/join-room", { slug: roomId });
-      if (!res.data.found) 
+      if (!res.data.found)
         router.push(`/choice`);
-      else if (session?.user.email === res.data.adminEmail) 
+      else if (session?.user.email === res.data.adminEmail)
         setIsAdmin(true);
     } catch (error) {
       console.log("Something went wrong in room's page.tsx");
@@ -73,7 +77,7 @@ export default function Whiteboard() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
+    const ws = new WebSocket("ws://localhost:3000");
 
     ws.onopen = () => {
       const email = session?.user.email;
@@ -154,7 +158,7 @@ export default function Whiteboard() {
 
     return () => {
       window.removeEventListener("resize", resizeCanvas);
-      if(cleanup)
+      if (cleanup)
         cleanup();
     };
   }, [mode, shapeMode, socket, isAdmin]);
@@ -166,16 +170,22 @@ export default function Whiteboard() {
     <div className="relative w-full h-screen overflow-hidden ">
       <div className={`absolute top-2 right-2 flex flex-col gap-2 z-20`}>
         <button
-          className={`p-2 rounded-full cursor-pointer ${mode==="dark"? "text-white":"text-black"}`}
+          className={`p-2 rounded-full cursor-pointer ${mode === "dark" ? "text-white" : "text-black"}`}
           onClick={() => setChat(!chat)}
         >
           <AiOutlineMessage size={24} />
         </button>
         <button
-          className={`p-2 rounded-full ${mode==="dark"? "text-white":"text-black"} cursor-pointer`}
+          className={`p-2 rounded-full ${mode === "dark" ? "text-white" : "text-black"} cursor-pointer`}
           onClick={() => setParticipants(!participants)}
         >
           <IoPeopleSharp size={24} />
+        </button>
+        <button
+          className={`p-2 rounded-full ${mode === "dark" ? "text-white" : "text-black"} cursor-pointer`}
+          onClick={() => setDownload(!download)}
+        >
+          <FiDownload size={24} />
         </button>
       </div>
 
@@ -200,9 +210,8 @@ export default function Whiteboard() {
         ].map((btn) => (
           <button
             key={btn.key}
-            className={`rounded-xl px-3 py-1 cursor-pointer ${
-              shapeMode === btn.key ? "bg-black text-white" : "text-black"
-            }`}
+            className={`rounded-xl px-3 py-1 cursor-pointer ${shapeMode === btn.key ? "bg-black text-white" : "text-black"
+              }`}
             onClick={() => setShapeMode(btn.key as any)}
           >
             {btn.icon}
@@ -210,7 +219,11 @@ export default function Whiteboard() {
         ))}
       </div>
 
-      <canvas ref={canvasRef} className="w-full h-full" />
+      <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full" onClick={() => {
+        setDownload(false)
+        setParticipants(false)
+        }}
+      />
 
       {chat && (
         <div className={`absolute w-screen  bg-slate-700 top-0 right-0 md:w-[30%] h-full shadow-lg z-10 md:z-10`}>
@@ -228,8 +241,32 @@ export default function Whiteboard() {
         </div>
       )}
       {participants && (
-        <div className={`w-screen md:w-[20%] absolute top-25 md:top-16 right-0 ${chat?" md:right-[30%]":"md:right-15"} rounded-2xl z-11 bg-white shadow-lg`}>
+        <div className={`w-screen md:w-[20%] absolute top-25 md:top-16 right-0 ${chat ? " md:right-[30%]" : "md:right-15"} rounded-2xl z-11 bg-white shadow-lg`}>
           <Participants existingClients={existingClientsRef.current} />
+        </div>
+      )}
+      {download && (
+        <div className={`absolute w-fit flex flex-col gap-4 p-2 ${mode === "dark" ? "bg-neutral-700 text-white" : "bg-slate-100 text-black"} rounded-2xl top-40 right-2 `}>
+          <div className="flex justify-center items-center gap-2">
+            <button
+              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "pdf"?"bg-slate-500/60":""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              onClick={() => setDownloadFormat("pdf")}>
+              PDF
+            </button>
+            <button
+              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "png"?"bg-slate-500/60":""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              onClick={() => setDownloadFormat("png")}>
+              PNG
+            </button>
+            <button className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "jpg"?"bg-slate-500/60":""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              onClick={() => setDownloadFormat("jpg")}>
+              JPG
+            </button>
+          </div>
+          <button className={`w-full rounded-2xl p-2 bg-green-500 hover:bg-green-700 text-white text-2xl font-semibold cursor-pointer`}
+            onClick={() => handleDownload(downloadFormat)}>
+            Download
+          </button>
         </div>
       )}
     </div>
