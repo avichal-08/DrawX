@@ -1,59 +1,53 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader } from "@repo/ui/loader";
 import axios from "axios";
 
 export default function AllRooms() {
-    
   const router = useRouter();
-  const roomsRef = useRef([]);
-  const userIdRef = useRef<string>("");
-  const [loading, setLoading] = useState<boolean>(true);
   const { data: session, status } = useSession();
+  const [rooms, setRooms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (session){
-      userIdRef.current = session?.user.id;
-      getRooms();
-    }
-  },[session])
+    if (session) getRooms();
+  }, [session]);
 
   const getRooms = async () => {
-    try{
+    try {
       const res = await axios.post("/api/get-rooms", {
-        adminId: userIdRef.current
+        adminId: session?.user?.id,
       });
-      roomsRef.current = res.data;
+      setRooms(res.data || []);
+    } catch (error) {
+      console.error("Error while getting rooms:", error);
+    } finally {
       setLoading(false);
-    }catch(error) {
-      console.log(`Error while getting room: ${error}`)
     }
-  }
-  
-  const name = session?.user.name;
+  };
 
-  if (status === "loading") {
+  if (status === "loading" || loading)
     return (
-    <div className="flex items-center justify-center mt-[20%]">
-      <Loader/>
-    </div>
-  )};
-
-  if (status !== "authenticated") router.push("/");
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center mt-[20%]">
-        <Loader/>
+      <div className="flex items-center justify-center h-screen">
+        <Loader />
       </div>
-    )
+    );
+
+  if (status !== "authenticated") {
+    router.push("/");
   }
+
+  const filteredRooms = rooms.filter((room) =>
+    room.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="bg-neutral-900 min-h-screen flex flex-col relative">
-      <div className="flex justify-between items-center border-b border-b-white bg-black h-fit py-4 px-8">
+    <div className="bg-neutral-950 min-h-screen flex flex-col">
+      <div className="flex justify-between items-center border-b border-b-white bg-black py-4 px-8">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">D</span>
@@ -62,35 +56,63 @@ export default function AllRooms() {
             DrawX
           </span>
         </div>
-        <div className="text-white text-xl md:text-2xl font-semibold">
-          <span>{name}</span>
-        </div>
       </div>
 
-      <div className="flex flex-col justify-center items-center flex-grow px-6">
-        <div className="bg-black text-white rounded-2xl p-6 w-full md:w-[600px] text-center shadow-lg hover:bg-black/80 transition">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-4">
+      <div className="flex flex-col items-center flex-grow px-6 py-10">
+        <div className="bg-black/70 text-white rounded-2xl p-8 w-full max-w-2xl shadow-lg backdrop-blur-sm">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-4 text-center">
             All Your Rooms
           </h1>
-          <p className="text-sm text-gray-300 mb-6">
-            Access all rooms where you were the admin. Click any to reopen and continue your session.
+          <p className="text-sm text-gray-300 mb-6 text-center">
+            Access rooms you’ve created. Click to jump right back in.
           </p>
 
-          <div className="flex flex-col items-center gap-3">
-            {roomsRef.current?.length > 0 ? (
-              roomsRef.current.map((room: any) => (
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <input
+              type="text"
+              placeholder="Search rooms..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 bg-white/10 text-white rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-orange-500 placeholder-gray-400"
+            />
+            <button
+              onClick={() => router.push("/create")}
+              className="bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold rounded-xl px-5 py-3 hover:scale-105 transition-transform"
+            >
+              + Create Room
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {filteredRooms.length > 0 ? (
+              filteredRooms.map((room) => (
                 <div
                   key={room.slug}
                   onClick={() => router.push(`/room/${room.slug}`)}
-                  className="w-full cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white text-lg rounded-xl p-3 flex justify-between items-center transition-all"
+                  className="cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl p-4 flex justify-between items-center transition-all border border-transparent hover:border-orange-500 hover:shadow-[0_0_15px_rgba(255,166,0,0.3)]"
                 >
-                  <span className="font-semibold">{room.name}</span>
-                  <span className="text-sm text-gray-400">{room.slug}</span>
+                  <div>
+                    <p className="font-semibold text-lg">{room.name}</p>
+                    <p className="text-sm text-gray-400">{room.slug}</p>
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {room.createdAt
+                      ? `Created ${new Date(
+                        room.createdAt
+                      ).toLocaleDateString()}`
+                      : ""}
+                  </span>
                 </div>
               ))
             ) : (
-              <div className="text-gray-400 text-lg mt-6">
-                No rooms found
+              <div className="text-gray-400 text-center py-10">
+                No rooms found.{" "}
+                <span
+                  onClick={() => router.push("/create")}
+                  className="text-amber-500 hover:underline cursor-pointer"
+                >
+                  Create one now →
+                </span>
               </div>
             )}
           </div>
