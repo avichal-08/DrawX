@@ -11,7 +11,7 @@ export default function AllRooms() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [rooms, setRooms] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
