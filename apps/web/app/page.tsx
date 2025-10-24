@@ -8,7 +8,7 @@ import { Loader } from "@repo/ui/loader";
 export default function LandingPage() {
 
   const router = useRouter();
-  const { data: session, status } = useSession(); 
+  const { data: session, status } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -51,23 +51,18 @@ export default function LandingPage() {
     { name: "TypeScript", color: "from-blue-400 to-blue-600" }
   ];
 
-  if ( status === "loading") {
+  if (status === "loading") {
     return (
       <div className='flex items-center justify-center mt-[20%]'>
-        <Loader/>
+        <Loader />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-300 bg-gray-950 text-white">
-      
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className={`absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-orange-500/10 to-amber-500/10 rounded-full blur-3xl animate-pulse`}></div>
-        <div className={`absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-red-500/10 to-orange-500/10 rounded-full blur-3xl animate-pulse`} style={{ animationDelay: '1s' }}></div>
-      </div>
+    <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 text-white">
 
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ?'bg-gray-900/80 backdrop-blur-lg border-b border-gray-800' : ''}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-gray-900/80 backdrop-blur-lg border-b border-gray-800' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
@@ -77,7 +72,7 @@ export default function LandingPage() {
               <span className="text-xl font-bold bg-gradient-to-r from-orange-500 to-amber-600 bg-clip-text text-transparent">DrawX</span>
             </div>
 
-            
+
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className={`hover:text-orange-500 transition-colors text-gray-300`}>Features</a>
               <a href="https://github.com/avichal-08/DrawX" className={`hover:text-orange-500 transition-colors text-gray-300`}>Github</a>
@@ -120,11 +115,11 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a onClick={() => {
-                if(!session)
+                if (!session)
                   signIn(undefined, { callbackUrl: "/home" })
-                else 
+                else
                   router.push('/home')
-                }} className="group relative px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105 flex items-center cursor-pointer">
+              }} className="group relative px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105 flex items-center cursor-pointer">
                 Join Now
                 <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </a>
@@ -143,7 +138,7 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-green-500"></div>
               </div>
               <div className={`bg-gray-950 rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden`}>
-               
+
                 <div className="absolute inset-0 grid grid-cols-12 grid-rows-8 gap-px opacity-10">
                   {[...Array(96)].map((_, i) => (
                     <div key={i} className={`bg-gray-700`}></div>
@@ -206,11 +201,11 @@ export default function LandingPage() {
             <div className="relative z-10">
               <h2 className="text-4xl sm:text-5xl font-bold mb-6">Start creating with DrawX today!</h2>
               <a onClick={() => {
-                if(!session)
+                if (!session)
                   signIn(undefined, { callbackUrl: "/home" })
-                else 
+                else
                   router.push('/home')
-                }} className=" cursor-pointer inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105">
+              }} className=" cursor-pointer inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl hover:shadow-orange-500/25 transition-all duration-300 hover:scale-105">
                 Get Started Free
                 <ChevronRight className="w-5 h-5 ml-2" />
               </a>
