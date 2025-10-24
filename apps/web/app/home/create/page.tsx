@@ -61,7 +61,7 @@ export default function Create() {
   return (
     <div className="bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 min-h-screen flex flex-col relative">
 
-      <header className="border-b border-orange-500/20 bg-black/40 backdrop-blur-sm">
+      <div className="border-b border-orange-500/20 bg-black/40 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/30">
@@ -72,9 +72,9 @@ export default function Create() {
             </span>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="flex-grow flex items-center justify-center px-6 py-12">
+      <div className="flex-grow flex items-center justify-center px-6 py-12">
         <div className="max-w-md w-full bg-gradient-to-br from-neutral-900 to-neutral-800 border border-orange-500/20 rounded-2xl p-8 shadow-2xl shadow-orange-500/10 backdrop-blur-sm relative overflow-hidden">
           <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-500/10 to-transparent rounded-full blur-3xl" />
 
@@ -151,13 +151,13 @@ export default function Create() {
             )}
           </div>
         </div>
-      </main>
+      </div>
 
-      <footer className="py-6 px-6 border-t border-orange-500/20">
+      <div className="py-6 px-6 border-t border-orange-500/20">
         <div className="max-w-7xl mx-auto text-center text-neutral-500 text-sm">
           Collaborative drawing made simple
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
