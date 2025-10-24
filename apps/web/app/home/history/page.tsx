@@ -14,22 +14,22 @@ export default function AllRooms() {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  // useEffect(() => {
-  //   if (session) getRooms();
-  // }, [session]);
+  useEffect(() => {
+    if (session) getRooms();
+  }, [session]);
 
-  // const getRooms = async () => {
-  //   try {
-  //     const res = await axios.post("/api/get-rooms", {
-  //       adminId: session?.user?.id,
-  //     });
-  //     setRooms(res.data || []);
-  //   } catch (error) {
-  //     console.error("Error while getting rooms:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  const getRooms = async () => {
+    try {
+      const res = await axios.post("/api/get-rooms", {
+        adminId: session?.user?.id,
+      });
+      setRooms(res.data || []);
+    } catch (error) {
+      console.error("Error while getting rooms:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (status === "loading" || loading)
     return (
@@ -38,9 +38,9 @@ export default function AllRooms() {
       </div>
     );
 
-  // if (status !== "authenticated") {
-  //   router.push("/");
-  // }
+  if (status !== "authenticated") {
+    router.push("/");
+  }
 
   const filteredRooms = rooms.filter((room) =>
     room.name.toLowerCase().includes(search.toLowerCase())
