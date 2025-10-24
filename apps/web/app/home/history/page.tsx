@@ -46,8 +46,8 @@ export default function AllRooms() {
   );
 
   return (
-    <div className="bg-neutral-950 min-h-screen flex flex-col">
-      <div className="flex justify-between items-center border-b border-b-white bg-black py-4 px-8">
+    <div className="bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 min-h-screen flex flex-col">
+      <div className="flex justify-between items-center border-b border-orange-500/20 bg-black/40 backdrop-blur-sm py-4 px-8">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">D</span>
@@ -59,7 +59,7 @@ export default function AllRooms() {
       </div>
 
       <div className="flex flex-col items-center flex-grow px-6 py-10">
-        <div className="bg-black/70 text-white rounded-2xl p-8 w-full max-w-2xl shadow-lg backdrop-blur-sm">
+        <div className="bg-gradient-to-br from-neutral-900 to-neutral-800 border border-orange-500/20 shadow-2xl shadow-orange-500/10 backdrop-blur-sm text-white rounded-2xl p-8 w-full max-w-2xl ">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 via-amber-500 to-yellow-500 bg-clip-text text-transparent mb-4 text-center">
             All Your Rooms
           </h1>
