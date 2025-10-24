@@ -46,7 +46,6 @@ export default function LandingPage() {
     { name: "Prisma", color: "from-orange-600 to-amber-600" },
     { name: "PostgreSQL", color: "from-blue-500 to-blue-700" },
     { name: "WebSockets", color: "from-orange-500 to-amber-600" },
-    { name: "Express", color: "from-green-600 to-green-400" },
     { name: "Turborepo", color: "from-red-500 to-pink-600" },
     { name: "TypeScript", color: "from-blue-400 to-blue-600" }
   ];
