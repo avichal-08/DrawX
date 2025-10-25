@@ -67,9 +67,11 @@ export default function Whiteboard() {
       const res = await axios.post("/api/join-room", { slug: roomId });
       if (!res.data.found)
         router.push("/home");
-      else if (session?.user.email === res.data.adminEmail){
+      else {
         setValidRoom(true);
-        setIsAdmin(true);
+        if (session?.user.email === res.data.adminEmail) {
+          setIsAdmin(true);
+        }
       }
     } catch (error) {
       console.log("Something went wrong in room's page.tsx");
@@ -81,7 +83,7 @@ export default function Whiteboard() {
   }, [roomId, session]);
 
   useEffect(() => {
-    if (status !== "authenticated" || socket) return;
+    if (status !== "authenticated" || socket || !validRoom) return;
     const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
 
     ws.onopen = () => {
@@ -120,10 +122,12 @@ export default function Whiteboard() {
     ws.onerror = (err) => console.log("WebSocket error:", err);
 
     return () => ws.close();
-  }, [status, session, roomId]);
+  }, [status, session, roomId, validRoom]);
 
   useEffect(() => {
     const fetchStrokes = async () => {
+      if (!validRoom)
+        return;
       try {
         const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
         shapesRef.current = res.data.strokesDetail;
@@ -132,7 +136,7 @@ export default function Whiteboard() {
       }
     };
     fetchStrokes();
-  }, []);
+  }, [validRoom]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -169,7 +173,13 @@ export default function Whiteboard() {
     };
   }, [mode, shapeMode, socket, isAdmin, loading]);
 
-  if (status === "loading" || loading || !validRoom) return <div className="flex justify-center items-center"><Loader/></div>;
+  if (!validRoom) return (
+    <div className="flex justify-center items-center gap-2 text-xl md:text-2xl text-white bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 min-h-screen">
+      <p>Checking Room Code Validity</p>
+      <Loader />
+    </div>
+  )
+  if (status === "loading" || loading) return <div className="flex justify-center items-center"><Loader /></div>;
   if (status === "unauthenticated") router.push("/");
 
   return (
@@ -228,7 +238,7 @@ export default function Whiteboard() {
       <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full" onClick={() => {
         setDownload(false)
         setParticipants(false)
-        }}
+      }}
       />
 
       {chat && (
@@ -255,16 +265,16 @@ export default function Whiteboard() {
         <div className={`absolute w-fit flex flex-col gap-4 p-2 ${mode === "dark" ? "bg-neutral-700 text-white" : "bg-slate-100 text-black"} rounded-2xl top-40 right-2 `}>
           <div className="flex justify-center items-center gap-2">
             <button
-              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "pdf"?"bg-slate-500/60":""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "pdf" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
               onClick={() => setDownloadFormat("pdf")}>
               PDF
             </button>
             <button
-              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "png"?"bg-slate-500/60":""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "png" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
               onClick={() => setDownloadFormat("png")}>
               PNG
             </button>
-            <button className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "jpg"?"bg-slate-500/60":""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+            <button className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "jpg" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
               onClick={() => setDownloadFormat("jpg")}>
               JPG
             </button>
