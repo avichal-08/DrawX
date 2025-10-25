@@ -78,7 +78,7 @@ export default function Whiteboard() {
   }, [roomId, session]);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" || socket) return;
     const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
 
     ws.onopen = () => {
@@ -164,7 +164,7 @@ export default function Whiteboard() {
       if (cleanup)
         cleanup();
     };
-  }, [mode, shapeMode, socket, isAdmin]);
+  }, [mode, shapeMode, socket, isAdmin, loading]);
 
   if (status === "loading" || loading) return <div className="flex justify-center items-center"><Loader/></div>;
   if (status === "unauthenticated") router.push("/");

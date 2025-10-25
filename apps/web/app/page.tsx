@@ -52,7 +52,7 @@ export default function LandingPage() {
 
   if (status === "loading") {
     return (
-      <div className='flex items-center justify-center mt-[20%]'>
+      <div className='flex justify-center items-center'>
         <Loader />
       </div>
     )
@@ -61,7 +61,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen transition-colors duration-300 bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 text-white">
 
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-gray-900/80 backdrop-blur-lg border-b border-gray-800' : ''}`}>
+      <div className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-gray-900/80 backdrop-blur-lg border-b border-gray-800' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
@@ -95,9 +95,9 @@ export default function LandingPage() {
             </div>
           </div>
         )}
-      </nav>
+      </div>
 
-      <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+      <div className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 animate-fade-in">
             <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-orange-500/20 rounded-full px-4 py-2 mb-6">
@@ -155,9 +155,9 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 relative">
+      <div id="features" className="py-20 px-4 sm:px-6 lg:px-8 relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold mb-4">Powerful Features</h2>
@@ -175,9 +175,9 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      <section id="tech" className="py-20 px-4 sm:px-6 lg:px-8">
+      <div id="tech" className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl sm:text-5xl font-bold mb-4">Built With Modern Tech</h2>
@@ -191,9 +191,9 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
+      <div className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <div className={`relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-12 text-center overflow-hidden border border-gray-800`}>
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10"></div>
@@ -211,9 +211,9 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <footer className={`py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-800`}>
+      <div className={`py-12 px-4 sm:px-6 lg:px-8 border-t border-gray-800`}>
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-amber-600 rounded-lg flex items-center justify-center">
@@ -223,7 +223,7 @@ export default function LandingPage() {
           </div>
           <p className={`text-gray-400`}>© 2025 DrawX. Built with ❤️, by <a href="https://github.com/avichal-08">Avichal</a>.</p>
         </div>
-      </footer>
+      </div>
 
       <style jsx>{`
         @keyframes fade-in {
