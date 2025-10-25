@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!roomAdmin) {
-      return NextResponse.json({ found: false }, { status: 404 });
+      return NextResponse.json({ found: false }, { status: 200 });
     }
     
     return NextResponse.json({

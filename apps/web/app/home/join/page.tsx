@@ -107,7 +107,7 @@ export default function Join() {
               Don't have a room yet?{" "}
               <button
                 onClick={() => router.push("/home/create")}
-                className="text-orange-400 hover:underline font-medium inline-flex items-center gap-1"
+                className="cursor-pointer text-orange-400 hover:underline font-medium inline-flex items-center gap-1"
               >
                 Create One <FaArrowRight className="text-xs" />
               </button>

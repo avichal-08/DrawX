@@ -49,6 +49,7 @@ export default function Whiteboard() {
   const [participants, setParticipants] = useState(false);
   const [chat, setChat] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [validRoom, setValidRoom] = useState(false);
   const [mode, setMode] = useState<"dark" | "light">("dark");
   const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil" | "eraser">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -65,9 +66,11 @@ export default function Whiteboard() {
     try {
       const res = await axios.post("/api/join-room", { slug: roomId });
       if (!res.data.found)
-        router.push(`/choice`);
-      else if (session?.user.email === res.data.adminEmail)
+        router.push("/home");
+      else if (session?.user.email === res.data.adminEmail){
+        setValidRoom(true);
         setIsAdmin(true);
+      }
     } catch (error) {
       console.log("Something went wrong in room's page.tsx");
     }
@@ -166,7 +169,7 @@ export default function Whiteboard() {
     };
   }, [mode, shapeMode, socket, isAdmin, loading]);
 
-  if (status === "loading" || loading) return <div className="flex justify-center items-center"><Loader/></div>;
+  if (status === "loading" || loading || !validRoom) return <div className="flex justify-center items-center"><Loader/></div>;
   if (status === "unauthenticated") router.push("/");
 
   return (
