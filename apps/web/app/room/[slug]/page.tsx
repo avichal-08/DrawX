@@ -24,6 +24,7 @@ import { Left } from "../../../alerts/left";
 import type { existingClients } from "../../../alerts/participants/types";
 import { Participants } from "../../../alerts/participants";
 import { handleDownload } from "../../../draw/download";
+import { Loader } from "@repo/ui/loader";
 
 export default function Whiteboard() {
   const params = useParams();
@@ -47,6 +48,7 @@ export default function Whiteboard() {
   const [left, setLeft] = useState(false);
   const [participants, setParticipants] = useState(false);
   const [chat, setChat] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"dark" | "light">("dark");
   const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil" | "eraser">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -86,6 +88,7 @@ export default function Whiteboard() {
       ws.send(
         JSON.stringify({ type: "join-room", roomId, data: "", email, name })
       );
+      setLoading(false);
       console.log("WebSocket connected");
     };
 
@@ -163,7 +166,7 @@ export default function Whiteboard() {
     };
   }, [mode, shapeMode, socket, isAdmin]);
 
-  if (status === "loading") return <p className="text-2xl mt-40 text-center">Loading...</p>;
+  if (status === "loading" || loading) return <div className="flex justify-center items-center"><Loader/></div>;
   if (status === "unauthenticated") router.push("/");
 
   return (

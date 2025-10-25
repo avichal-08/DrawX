@@ -12,7 +12,7 @@ export const Loader: React.FC = () => {
   });
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 h-screen">
       {[0, 1, 2].map((i) => (
         <motion.div
           key={i}

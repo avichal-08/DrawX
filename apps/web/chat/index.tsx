@@ -49,7 +49,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
   const sendMessage = () => {
     const message = inputRef.current?.value?.trim();
     if (!message) return;
-
+ 
     const sendData = {
       message,
       email: session?.user?.email || "Anonymous",
