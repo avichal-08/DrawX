@@ -28,7 +28,7 @@ export function Share({ slug }: { slug: string }) {
 
     return (
         <div className="flex flex-col justify-around items-center w-fit gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl">
-            <div className="text-2xl font-semibold">ROOM SLUG :
+            <div className="text-2xl font-semibold">ROOM ID :
                 <span className="text-xl font-sans"> {slug}</span>
             </div>
             <button
@@ -41,7 +41,7 @@ export function Share({ slug }: { slug: string }) {
                     </>
                 ) : (
                     <>
-                        <FaCopy /> Copy Room Slug
+                        <FaCopy /> Copy Room ID
                     </>
                 )}
             </button>

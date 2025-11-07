@@ -279,7 +279,7 @@ export default function Whiteboard() {
       )}
 
       {download && (
-        <div className={`absolute z-11 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl  ${chat?"top-1/2 right-1/2 -translate-y-1/2":"top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
+        <div className={`absolute z-11 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl ${chat?"top-1/2 right-1/2 -translate-y-1/2":"top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
           <div className="font-semibold text-3xl">Export Drawing</div>
           <div className="text-xl">Choose Format:</div>
           <div className="flex justify-center items-center gap-3">
