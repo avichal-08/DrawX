@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-import { toast } from "sonner";
 
 import { AiOutlineMessage } from "react-icons/ai";
 import { CiLocationArrow1, CiText } from "react-icons/ci";
@@ -28,6 +27,7 @@ import { Participants } from "../../../alerts/participants";
 import { handleDownload } from "../../../draw/download";
 import { Loader } from "@repo/ui/loader";
 import { Share } from "@repo/ui/share";
+import { Removed } from "@repo/ui/removed";
 
 export default function Whiteboard() {
   const params = useParams();
@@ -49,6 +49,7 @@ export default function Whiteboard() {
 
   const [joined, setJoined] = useState(false);
   const [left, setLeft] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const [participants, setParticipants] = useState(false);
   const [chat, setChat] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -104,8 +105,7 @@ export default function Whiteboard() {
     ws.onmessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "not-allowed") {
-        toast.error("You’re not allowed to join this room.");
-        setTimeout(() => router.push("/home"), 800);
+        router.push("/home");
       }
       if (msg.type === "room-joined") {
         joinedRef.current = { email: msg.email, name: msg.name };
@@ -119,7 +119,7 @@ export default function Whiteboard() {
       if (msg.type === "remove-user") {
         const email = msg.data.email;
         if (email === session?.user.email) {
-         
+          setRemoved(true);
           setTimeout(() => router.push("/home"), 2000);
         }
       }
@@ -276,6 +276,11 @@ export default function Whiteboard() {
       {left && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-1">
           <Left name={leftRef.current?.name!} email={leftRef.current?.email!} />
+        </div>
+      )}
+      {removed && (
+        <div className={`absolute z-10 ${chat ? "top-1/2 right-1/2 -translate-y-1/2" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
+          <Removed/>
         </div>
       )}
       {participants && (
