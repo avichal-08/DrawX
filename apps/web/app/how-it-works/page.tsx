@@ -1,12 +1,12 @@
 "use client"
 import React, { useState } from 'react';
-import { 
-  FaServer, 
-  FaDatabase, 
-  FaNetworkWired, 
-  FaPaintBrush, 
-  FaComments, 
-  FaUsers, 
+import {
+  FaServer,
+  FaDatabase,
+  FaNetworkWired,
+  FaPaintBrush,
+  FaComments,
+  FaUsers,
   FaLock,
   FaCode,
   FaBolt,
@@ -17,7 +17,7 @@ import {
 export default function HowItWorks() {
   const [expandedSection, setExpandedSection] = useState(null);
 
-  const toggleSection = (section:any) => {
+  const toggleSection = (section: any) => {
     setExpandedSection(expandedSection === section ? null : section);
   };
 
@@ -153,7 +153,7 @@ export default function HowItWorks() {
               DrawX
             </span>
           </div>
-          <a 
+          <a
             href="/"
             className="px-6 py-2 bg-gradient-to-r from-orange-500 to-amber-600 rounded-lg font-semibold hover:scale-105 transition-transform cursor-pointer"
           >
@@ -175,7 +175,7 @@ export default function HowItWorks() {
         <h2 className="text-4xl font-bold text-center mb-12">User Workflow</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {workflow.map((item) => (
-            <div 
+            <div
               key={item.step}
               className="bg-gradient-to-br from-neutral-900 to-neutral-800 border border-orange-500/20 rounded-2xl p-6 hover:border-orange-500/50 transition-all"
             >
@@ -194,7 +194,7 @@ export default function HowItWorks() {
         <h2 className="text-4xl font-bold text-center mb-12">Core Features</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {features.map((feature, idx) => (
-            <div 
+            <div
               key={idx}
               className="bg-gradient-to-br from-neutral-900 to-neutral-800 border border-orange-500/20 rounded-2xl p-6 hover:border-orange-500/50 transition-all"
             >
@@ -222,7 +222,7 @@ export default function HowItWorks() {
         <h2 className="text-4xl font-bold text-center mb-12">Technical Architecture</h2>
         <div className="space-y-4">
           {architecture.map((layer) => (
-            <div 
+            <div
               key={layer.id}
               className="bg-gradient-to-br from-neutral-900 to-neutral-800 border border-orange-500/20 rounded-2xl overflow-hidden"
             >
@@ -243,14 +243,14 @@ export default function HowItWorks() {
                   <FaChevronDown className="text-orange-500 text-xl" />
                 )}
               </button>
-              
+
               {expandedSection === layer.id && (
                 <div className="p-6 border-t border-orange-500/20 bg-neutral-900/50">
                   <div className="mb-4">
                     <h4 className="text-lg font-semibold mb-2 text-orange-400">Technologies Used:</h4>
                     <div className="flex flex-wrap gap-2">
                       {layer.tech.map((tech, i) => (
-                        <span 
+                        <span
                           key={i}
                           className="px-3 py-1 bg-orange-500/10 text-orange-400 text-sm rounded-full border border-orange-500/20"
                         >
@@ -356,7 +356,7 @@ export default function HowItWorks() {
             "Turborepo",
             "Canvas API"
           ].map((tech) => (
-            <div 
+            <div
               key={tech}
               className="bg-gradient-to-r from-orange-500 to-amber-600 text-white font-semibold rounded-xl p-4 text-center hover:scale-105 transition-transform"
             >
@@ -373,13 +373,13 @@ export default function HowItWorks() {
             Experience real-time collaboration with DrawX today
           </p>
           <div className="flex gap-4 justify-center">
-            <a 
+            <a
               href="/"
               className="px-8 py-4 bg-gradient-to-r from-orange-500 to-amber-600 rounded-xl font-semibold hover:scale-105 transition-transform cursor-pointer"
             >
               Get Started
             </a>
-            <a 
+            <a
               href="https://github.com/avichal-08/DrawX"
               target="_blank"
               rel="noopener noreferrer"

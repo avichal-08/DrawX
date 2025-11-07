@@ -26,7 +26,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
     };
     fetchChat();
   }, [slug]);
-  
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     inputRef.current?.focus();
@@ -38,7 +38,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
     const handleMessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "chat-update") {
-        setCurrentMessages((prev) => [...prev,msg.data])
+        setCurrentMessages((prev) => [...prev, msg.data])
       }
     };
 
@@ -49,15 +49,15 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
   const sendMessage = () => {
     const message = inputRef.current?.value?.trim();
     if (!message) return;
- 
+
     const sendData = {
       message,
       email: session?.user?.email || "Anonymous",
       name: session?.user?.name || "Anonymous"
     };
-    
-    setCurrentMessages((prev) => [...prev,sendData])
-    
+
+    setCurrentMessages((prev) => [...prev, sendData])
+
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "chat-update", data: sendData }));
     }
@@ -68,7 +68,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
   };
 
   const sendChatDB = async (sendData: ChatMessage) => {
-    await axios.post('/api/chat/save',{
+    await axios.post('/api/chat/save', {
       slug,
       message: sendData.message,
       senderName: sendData.name,
@@ -78,33 +78,32 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
 
   return (
     <div
-      className={`${mode === "light" ? "bg-slate-100" : "bg-neutral-900 text-white"}
+      className={`${mode === "light" ? "bg-slate-100 border-2 border-neutral-900" : "bg-neutral-900 border-1 border-slate-200 text-white"}
         w-90 h-screen flex flex-col px-2`}
     >
       <div className="flex-grow overflow-y-scroll scrollbar-hide space-y-2 p-2">
         {currentMessages.map((msg, idx) => (
           <div
             key={idx}
-            className={`${
-              msg.email === session?.user?.email
+            className={`${msg.email === session?.user?.email
                 ? "text-right text-blue-400"
                 : "text-left text-gray-300"
-            }`}
+              }`}
           >
-            <span className={`${mode === "light"?"text-black":""} text-xs opacity-70 break-all [overflow-wrap:anywhere]`}>{msg.name}</span>
-            <div className={`${mode === "light"?"text-black":""} text-xl break-all [overflow-wrap:anywhere]`}>{msg.message}</div>
+            <span className={`${mode === "light" ? "text-black" : ""} text-xs opacity-70 break-all [overflow-wrap:anywhere]`}>{msg.name}</span>
+            <div className={`${mode === "light" ? "text-black" : ""} text-xl break-all [overflow-wrap:anywhere]`}>{msg.message}</div>
           </div>
         ))}
-      <div ref={bottomRef}></div>
+        <div ref={bottomRef}></div>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className={`flex items-center justify-between gap-2 mb-4 ${mode === "light" ? "bg-gray-300" : "bg-white"} text-black p-2 rounded-xl h-12`}>
         <input
           ref={inputRef}
           type="text"
           placeholder="Message"
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          className={`${mode === "light" ? "bg-gray-300" : "bg-white text-black"} h-10 p-2 flex-grow rounded-xl focus:outline-none`}
+          className={`${mode === "light" ? "bg-gray-300" : "text-black"} focus:outline-none`}
         />
         <div className="cursor-pointer" onClick={sendMessage}>
           <FaArrowCircleUp size={25} />

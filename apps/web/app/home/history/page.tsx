@@ -67,11 +67,11 @@ export default function AllRooms() {
             <FaHistory className="text-white text-2xl" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-3">
-              All your{" "}
-              <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-                Rooms
-              </span>
-            </h1>
+            All your{" "}
+            <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
+              Rooms
+            </span>
+          </h1>
           <p className="text-sm text-gray-300 mb-6 text-center">
             Access rooms you’ve created. Click to jump right back in.
           </p>

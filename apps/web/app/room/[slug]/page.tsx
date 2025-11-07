@@ -13,6 +13,7 @@ import { LuPencil } from "react-icons/lu";
 import { GoPeople } from "react-icons/go";
 import { LuEraser } from "react-icons/lu";
 import { FiDownload } from "react-icons/fi";
+import { MdOutlineShare } from "react-icons/md";
 
 import { initDraw } from "../../../draw";
 import type { ShapeDetail } from "../../../draw/types";
@@ -25,6 +26,7 @@ import type { existingClients } from "../../../alerts/participants/types";
 import { Participants } from "../../../alerts/participants";
 import { handleDownload } from "../../../draw/download";
 import { Loader } from "@repo/ui/loader";
+import { Share } from "@repo/ui/share";
 
 export default function Whiteboard() {
   const params = useParams();
@@ -56,6 +58,7 @@ export default function Whiteboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState<"pdf" | "png" | "jpg">("jpg");
   const [download, setDownload] = useState<boolean>(false);
+  const [share, setShare] = useState<boolean>(false);
 
   // const socketUrl = process.env.NEXT_WS_URL;
 
@@ -203,6 +206,12 @@ export default function Whiteboard() {
         >
           <FiDownload size={24} />
         </button>
+        <button
+          className={`p-2 rounded-full ${mode === "dark" ? "text-white" : "text-black"} cursor-pointer`}
+          onClick={() => setShare(true)}
+        >
+          <MdOutlineShare size={24} />
+        </button>
       </div>
 
       <div
@@ -238,11 +247,12 @@ export default function Whiteboard() {
       <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full" onClick={() => {
         setDownload(false)
         setParticipants(false)
+        setShare(false)
       }}
       />
 
       {chat && (
-        <div className={`absolute w-screen  bg-slate-700 top-0 right-0 md:w-[30%] h-full shadow-lg z-2`}>
+        <div className={`absolute w-screen ${mode === "dark" ? "bg-slate-700" : ""}  top-0 right-0 md:w-[30%] h-full shadow-lg z-2`}>
           <Chat mode={mode} socket={socket} slug={roomId as string} />
         </div>
       )}
@@ -261,28 +271,38 @@ export default function Whiteboard() {
           <Participants existingClients={existingClientsRef.current} />
         </div>
       )}
+
+      {share && (
+        <div className="absolute z-11 top-40 right-1/2">
+          <Share slug={roomId as string} />
+        </div>
+      )}
+
       {download && (
-        <div className={`absolute z-10 w-fit flex flex-col gap-4 p-2 ${mode === "dark" ? "bg-neutral-700 text-white" : "bg-slate-100 text-black"} rounded-2xl top-40 right-2 `}>
-          <div className="flex justify-center items-center gap-2">
+        <div className={`absolute z-10 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl top-40 right-1/2 `}>
+          <div className="font-semibold text-3xl">Export Drawing</div>
+          <div className="text-xl">Choose Format:</div>
+          <div className="flex justify-center items-center gap-3">
             <button
-              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "pdf" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              className={`rounded-xl p-4 cursor-pointer ${downloadFormat === "pdf" ? "bg-slate-500/60" : ""} bg-neutral-800  hover:bg-slate-400 text-xl `}
               onClick={() => setDownloadFormat("pdf")}>
               PDF
             </button>
             <button
-              className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "png" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+              className={`rounded-xl p-4 cursor-pointer ${downloadFormat === "png" ? "bg-slate-500/60" : ""} bg-neutral-800 hover:bg-slate-400 text-xl `}
               onClick={() => setDownloadFormat("png")}>
               PNG
             </button>
-            <button className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "jpg" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
+            <button className={`rounded-xl p-4 cursor-pointer ${downloadFormat === "jpg" ? "bg-slate-500/60" : ""} bg-neutral-800  hover:bg-slate-400 text-xl `}
               onClick={() => setDownloadFormat("jpg")}>
               JPG
             </button>
           </div>
-          <button className={`w-full rounded-2xl p-2 bg-green-500 hover:bg-green-700 text-white text-2xl font-semibold cursor-pointer`}
+          <div className={`flex justify-evenly items-center w-full rounded-xl p-2 bg-green-700 hover:bg-green-600 text-white text-2xl cursor-pointer`}
             onClick={() => handleDownload(downloadFormat)}>
             Download
-          </button>
+            <FiDownload size={24} />
+          </div>
         </div>
       )}
     </div>
