@@ -269,12 +269,12 @@ export default function Whiteboard() {
         </div>
       )}
       {joined && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-1">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
           <Joined name={joinedRef.current?.name!} email={joinedRef.current?.email!} />
         </div>
       )}
       {left && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-1">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-19">
           <Left name={leftRef.current?.name!} email={leftRef.current?.email!} />
         </div>
       )}
