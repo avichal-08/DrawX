@@ -16,13 +16,13 @@ export function Share({ slug }: { slug: string }) {
     };
 
     return (
-        <div className="flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl">
+        <div className="flex flex-col justify-around items-center w-fit gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl">
             <div className="text-2xl font-semibold">ROOM SLUG :
                 <span className="text-xl font-sans"> {slug}</span>
             </div>
             <button
                 onClick={copyToClipboard}
-                className="cursor-pointer flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 rounded-lg hover:scale-105 transition-transform"
+                className="cursor-pointer flex flex-grow items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 rounded-lg hover:scale-105 transition-transform"
             >
                 {copied ? (
                     <>
@@ -30,11 +30,10 @@ export function Share({ slug }: { slug: string }) {
                     </>
                 ) : (
                     <>
-                        <FaCopy /> Copy
+                        <FaCopy /> Copy Room Slug
                     </>
                 )}
             </button>
-
         </div>
     )
 }
