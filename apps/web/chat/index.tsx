@@ -104,7 +104,7 @@ export const Chat = ({ mode, socket, slug }: ChatProps) => {
           type="text"
           placeholder="Message"
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-          className={`${mode === "light" ? "bg-gray-300" : "bg-white text-black"} h-10 p-2 flex-grow rounded-2xl focus:outline-none`}
+          className={`${mode === "light" ? "bg-gray-300" : "bg-white text-black"} h-10 p-2 flex-grow rounded-xl focus:outline-none`}
         />
         <div className="cursor-pointer" onClick={sendMessage}>
           <FaArrowCircleUp size={25} />

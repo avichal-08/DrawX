@@ -242,7 +242,7 @@ export default function Whiteboard() {
       />
 
       {chat && (
-        <div className={`absolute w-screen  bg-slate-700 top-0 right-0 md:w-[30%] h-full shadow-lg z-10 md:z-10`}>
+        <div className={`absolute w-screen  bg-slate-700 top-0 right-0 md:w-[30%] h-full shadow-lg z-2`}>
           <Chat mode={mode} socket={socket} slug={roomId as string} />
         </div>
       )}
@@ -262,7 +262,7 @@ export default function Whiteboard() {
         </div>
       )}
       {download && (
-        <div className={`absolute w-fit flex flex-col gap-4 p-2 ${mode === "dark" ? "bg-neutral-700 text-white" : "bg-slate-100 text-black"} rounded-2xl top-40 right-2 `}>
+        <div className={`absolute z-10 w-fit flex flex-col gap-4 p-2 ${mode === "dark" ? "bg-neutral-700 text-white" : "bg-slate-100 text-black"} rounded-2xl top-40 right-2 `}>
           <div className="flex justify-center items-center gap-2">
             <button
               className={`rounded-2xl p-2 cursor-pointer ${downloadFormat === "pdf" ? "bg-slate-500/60" : ""} ${mode === "dark" ? "bg-slate-200 text-black hover:bg-slate-400" : "bg-neutral-500 text-white hover:bg-neutral-700/60"} text-1xl font-semibold`}
