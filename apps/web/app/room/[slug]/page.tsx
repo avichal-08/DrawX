@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
+import { toast } from "sonner";
 
 import { AiOutlineMessage } from "react-icons/ai";
 import { CiLocationArrow1, CiText } from "react-icons/ci";
@@ -87,7 +88,7 @@ export default function Whiteboard() {
 
   useEffect(() => {
     if (status !== "authenticated" || socket || !validRoom) return;
-    const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
+    const ws = new WebSocket("ws://localhost:3000");
 
     ws.onopen = () => {
       const email = session?.user.email;
@@ -102,6 +103,10 @@ export default function Whiteboard() {
 
     ws.onmessage = (event: MessageEvent) => {
       const msg = JSON.parse(event.data);
+      if (msg.type === "not-allowed") {
+        toast.error("You’re not allowed to join this room.");
+        setTimeout(() => router.push("/home"), 800);
+      }
       if (msg.type === "room-joined") {
         joinedRef.current = { email: msg.email, name: msg.name };
         existingClientsRef.current = msg.existingClients;
@@ -111,6 +116,13 @@ export default function Whiteboard() {
       }
       if (msg.type === "existing-client")
         existingClientsRef.current = msg.existingClients;
+      if (msg.type === "remove-user") {
+        const email = msg.data.email;
+        if (email === session?.user.email) {
+         
+          setTimeout(() => router.push("/home"), 2000);
+        }
+      }
       if (msg.type === "room-left") {
         leftRef.current = { email: msg.email, name: msg.name };
         existingClientsRef.current = msg.existingClients;
@@ -215,7 +227,7 @@ export default function Whiteboard() {
       </div>
 
       <div
-        className={`fixed bottom-4 ${chat?"right-1/2":"left-1/2 -translate-x-1/2"} flex items-center gap-2 sm:gap-3 bg-gray-300 border-2 border-gray-400 rounded-2xl px-2 py-1 sm:px-4 sm:py-2 shadow-lg z-1`}
+        className={`fixed bottom-4 ${chat ? "right-1/2" : "left-1/2 -translate-x-1/2"} flex items-center gap-2 sm:gap-3 bg-gray-300 border-2 border-gray-400 rounded-2xl px-2 py-1 sm:px-4 sm:py-2 shadow-lg z-1`}
       >
         <button
           className="text-black rounded-xl px-2 py-1 cursor-pointer"
@@ -267,19 +279,19 @@ export default function Whiteboard() {
         </div>
       )}
       {participants && (
-        <div className={`w-screen md:w-[20%] absolute top-25 md:top-16 right-0 ${chat ? " md:right-[30%]" : "md:right-15"} rounded-2xl z-11 bg-white shadow-lg`}>
-          <Participants existingClients={existingClientsRef.current} />
+        <div className={`w-screen md:w-[20%] absolute top-25 md:top-16 right-0 ${chat ? " md:right-[30%]" : "md:right-25"} rounded-2xl z-11 bg-white shadow-lg`}>
+          <Participants existingClients={existingClientsRef.current} isAdmin={isAdmin} socket={socket} />
         </div>
       )}
 
       {share && (
-        <div className={`absolute z-10 ${chat?"top-1/2 right-1/2 -translate-y-1/2":"top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
+        <div className={`absolute z-10 ${chat ? "top-1/2 right-1/2 -translate-y-1/2" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
           <Share slug={roomId as string} />
         </div>
       )}
 
       {download && (
-        <div className={`absolute z-11 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl ${chat?"top-1/2 right-1/2 -translate-y-1/2":"top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
+        <div className={`absolute z-11 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl ${chat ? "top-1/2 right-1/2 -translate-y-1/2" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
           <div className="font-semibold text-3xl">Export Drawing</div>
           <div className="text-xl">Choose Format:</div>
           <div className="flex justify-center items-center gap-3">

@@ -6,6 +6,7 @@ export function WebSkt(server: any) {
 
   const clients = new Map<string, { socket: WebSocket; roomId: string | null; clientId: string; name: string | null; email: string | null; }>();
   const rooms = new Map<string, Set<string>>();
+  const blocked = new Map<string, Set<string>>();
 
   wss.on("connection", (socket) => {
     const clientId = crypto.randomUUID();
@@ -29,6 +30,17 @@ export function WebSkt(server: any) {
             client.email = email;
 
             const room = rooms.get(roomId);
+            const blockedList = blocked.get(roomId);
+            let isBlocked = false;
+            if (blockedList) {
+              isBlocked = blockedList.has(client.email as string);
+            }
+            if (isBlocked) {
+              client.socket.send(JSON.stringify({
+                type: "not-allowed"
+              }));
+              break;
+            }
             if (room) {
               room.add(clientId);
             }
@@ -72,9 +84,27 @@ export function WebSkt(server: any) {
                 }
               }
             }
-            console.log(`Client ${clientId} joined room ${roomId}`);
             break;
 
+          case "remove-user":
+            if (!blocked.has(roomId)) {
+              blocked.set(roomId, new Set());
+            }
+            const blockList = blocked.get(roomId)
+            if (blockList) {
+              blockList.add(data.email)
+            }
+            const roomAllClients = rooms.get(client.roomId as string);
+            if (roomAllClients) {
+              for (const id of roomAllClients) {
+                if (id === clientId) continue;
+                const c = clients.get(id);
+                if (c && c.socket.readyState === WebSocket.OPEN) {
+                  c.socket.send(JSON.stringify({ type, data }));
+                }
+              }
+            }
+            break;
           case "draw-update":
           case "chat-update":
           case "erase-update":
@@ -90,9 +120,6 @@ export function WebSkt(server: any) {
               }
             }
             break;
-
-          default:
-            console.log("Unknown message type:", type);
         }
       } catch (err) {
         console.log("Error parsing message:", err);
