@@ -3,13 +3,24 @@
 import { useState } from "react";
 import { FaCheckCircle, FaCopy } from "react-icons/fa";
 export function Share({ slug }: { slug: string }) {
-    const [copied, setCopied] = useState(false);
+    const [slugCopied, setSlugCopied] = useState(false);
+    const [urlCopied, setUrlCopied] = useState(false);
 
-    const copyToClipboard = async () => {
+    const copySlugToClipboard = async () => {
         try {
             await navigator.clipboard.writeText(slug);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            setSlugCopied(true);
+            setTimeout(() => setSlugCopied(false), 2000);
+        } catch (err) {
+            console.error("Failed to copy:", err);
+        }
+    };
+
+    const copyUrlToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(`https://draw-x-theta.vercel.app/room/${slug}`);
+            setUrlCopied(true);
+            setTimeout(() => setUrlCopied(false), 2000);
         } catch (err) {
             console.error("Failed to copy:", err);
         }
@@ -21,16 +32,30 @@ export function Share({ slug }: { slug: string }) {
                 <span className="text-xl font-sans"> {slug}</span>
             </div>
             <button
-                onClick={copyToClipboard}
-                className="cursor-pointer flex flex-grow items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 rounded-lg hover:scale-105 transition-transform"
+                onClick={copySlugToClipboard}
+                className="cursor-pointer flex flex-grow w-full items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 text-lg rounded-lg hover:scale-105 transition-transform"
             >
-                {copied ? (
+                {slugCopied ? (
                     <>
                         <FaCheckCircle /> Copied
                     </>
                 ) : (
                     <>
                         <FaCopy /> Copy Room Slug
+                    </>
+                )}
+            </button>
+            <button
+                onClick={copyUrlToClipboard}
+                className="cursor-pointer flex flex-grow w-full items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 text-lg rounded-lg hover:scale-105 transition-transform"
+            >
+                {urlCopied ? (
+                    <>
+                        <FaCheckCircle /> Copied
+                    </>
+                ) : (
+                    <>
+                        <FaCopy /> Copy Room Url
                     </>
                 )}
             </button>

@@ -208,7 +208,7 @@ export default function Whiteboard() {
         </button>
         <button
           className={`p-2 rounded-full ${mode === "dark" ? "text-white" : "text-black"} cursor-pointer`}
-          onClick={() => setShare(true)}
+          onClick={() => setShare(!share)}
         >
           <MdOutlineShare size={24} />
         </button>
