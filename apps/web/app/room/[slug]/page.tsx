@@ -215,7 +215,7 @@ export default function Whiteboard() {
       </div>
 
       <div
-        className={`fixed bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-gray-300 border-2 border-gray-400 rounded-2xl px-2 py-1 sm:px-4 sm:py-2 shadow-lg z-1`}
+        className={`fixed bottom-4 ${chat?"right-1/2":"left-1/2 -translate-x-1/2"} flex items-center gap-2 sm:gap-3 bg-gray-300 border-2 border-gray-400 rounded-2xl px-2 py-1 sm:px-4 sm:py-2 shadow-lg z-1`}
       >
         <button
           className="text-black rounded-xl px-2 py-1 cursor-pointer"
@@ -273,13 +273,13 @@ export default function Whiteboard() {
       )}
 
       {share && (
-        <div className="absolute z-11 top-40 right-1/2">
+        <div className={`absolute z-10 ${chat?"top-1/2 right-1/2 -translate-y-1/2":"top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
           <Share slug={roomId as string} />
         </div>
       )}
 
       {download && (
-        <div className={`absolute z-10 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl top-40 right-1/2 `}>
+        <div className={`absolute z-11 w-fit flex flex-col justify-around items-center gap-4 p-8 bg-neutral-900 shadow-sm shadow-white  text-white rounded-xl  ${chat?"top-1/2 right-1/2 -translate-y-1/2":"top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
           <div className="font-semibold text-3xl">Export Drawing</div>
           <div className="text-xl">Choose Format:</div>
           <div className="flex justify-center items-center gap-3">
