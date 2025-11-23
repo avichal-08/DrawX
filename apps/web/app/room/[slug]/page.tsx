@@ -258,7 +258,7 @@ export default function Whiteboard() {
         ))}
       </div>
 
-      <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full" onClick={() => {
+      <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full cursor-crosshair" onClick={() => {
         setDownload(false)
         setParticipants(false)
         setShare(false)
