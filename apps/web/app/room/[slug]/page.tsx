@@ -35,6 +35,7 @@ export default function Whiteboard() {
   const router = useRouter();
   const { data: session, status } = useSession();
 
+  const adminEmailRef = useRef<string>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const existingClientsRef = useRef<existingClients[]>([]);
   const shapesRef = useRef<ShapeDetail[]>([]);
@@ -75,6 +76,7 @@ export default function Whiteboard() {
       else {
         setValidRoom(true);
         if (session?.user.email === res.data.adminEmail) {
+          adminEmailRef.current = res.data.adminEmail;
           setIsAdmin(true);
         }
       }
@@ -280,12 +282,12 @@ export default function Whiteboard() {
       )}
       {removed && (
         <div className={`absolute z-10 ${chat ? "top-1/2 right-1/2 -translate-y-1/2" : "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"}`}>
-          <Removed/>
+          <Removed />
         </div>
       )}
       {participants && (
         <div className={`w-screen md:w-[20%] absolute top-25 md:top-16 right-0 ${chat ? " md:right-[30%]" : "md:right-25"} rounded-2xl z-11 bg-white shadow-lg`}>
-          <Participants existingClients={existingClientsRef.current} isAdmin={isAdmin} socket={socket} />
+          <Participants existingClients={existingClientsRef.current} isAdmin={isAdmin} adminEmail={adminEmailRef.current} socket={socket} />
         </div>
       )}
 

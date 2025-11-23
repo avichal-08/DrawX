@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 import type { existingClients } from "./types"
 
-export const Participants = ({ existingClients, isAdmin, socket }: { existingClients: existingClients[], isAdmin: boolean, socket: WebSocket | null; }) => {
+export const Participants = ({ existingClients, isAdmin, adminEmail, socket }: { existingClients: existingClients[], isAdmin: boolean, adminEmail: string | null, socket: WebSocket | null; }) => {
 
     const removeEmailRef = useRef<string | null>(null);
 
@@ -61,7 +61,7 @@ export const Participants = ({ existingClients, isAdmin, socket }: { existingCli
                                 {client.email}
                             </div>
                         </div>
-                        {isAdmin && (
+                        {isAdmin && !(adminEmail === client.email) && (
                             <button onClick={() => {
                                 removeEmailRef.current = client.email;
                                 removeUser();
