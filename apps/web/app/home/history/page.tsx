@@ -106,9 +106,13 @@ export default function AllRooms() {
                   </div>
                   <span className="text-xs text-gray-400">
                     {room.createdAt
-                      ? `Created ${new Date(
+                      ? `Created at ${new Date(
                         room.createdAt
-                      ).toLocaleDateString()}`
+                      ).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "2-digit",
+                      })}`
                       : ""}
                   </span>
                 </div>

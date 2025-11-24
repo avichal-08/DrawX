@@ -91,6 +91,7 @@ export default function Whiteboard() {
 
   useEffect(() => {
     if (status !== "authenticated" || socket || !validRoom) return;
+
     const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
 
     ws.onopen = () => {
