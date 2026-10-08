@@ -57,9 +57,9 @@ cp .env.example .env
 |---|---|---|
 | `DATABASE_URL` | web, db | Postgres connection string |
 | `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GOOGLE_ID`, `GOOGLE_SECRET` | web | Google sign-in |
-| `WS_TOKEN_SECRET` | web **and** api | Must be identical. The web app signs a 60-second ticket (`/api/ws-token`) and the WebSocket server verifies it. |
-| `NEXT_PUBLIC_WS_URL` | web | e.g. `ws://localhost:3000` locally, `wss://…` in production |
-| `ALLOWED_ORIGINS` | api | Optional comma-separated Origin allow-list for WebSocket connections |
+| `WS_TOKEN_SECRET` | web **and** api | Must be identical. The web app signs a 5-minute ticket (`/api/ws-token`) and the WebSocket server verifies it. |
+| `NEXT_PUBLIC_WS_URL` | web | e.g. `ws://localhost:3000` locally, `wss://…` in production. **Inlined at build time**: redeploy the web app after changing it. A page served over HTTPS can only open `wss://` sockets. |
+| `ALLOWED_ORIGINS` | api | Optional comma-separated Origin allow-list (trailing slashes and case are ignored) |
 
 ### 4. Setup the Database
 ##### Run Prisma migrations to initialize your database schema (inside packages/db):
@@ -86,6 +86,8 @@ pnpm run dev
 - **Sign-in** is NextAuth (Google). Every Next.js API route reads the user from the server-side session; ids and emails in request bodies are never trusted.
 - **WebSocket access** requires a short-lived ticket from `GET /api/ws-token?slug=…`. The ticket binds the user, the room and the admin role (looked up in the database) and is verified by the WebSocket server. Chat sender identity is stamped server-side, and only the room admin can remove users.
 - **Persistence**: whoever draws or erases a stroke saves it (`useStrokePersistence`), so the board no longer depends on the admin being online.
+- **Connection resilience**: the server pings every 25s (keeps proxies from idling connections out and reaps dead ones). The client reconnects with a fresh ticket and exponential backoff, re-syncs strokes it missed, and blocks drawing while offline instead of silently dropping shapes. It does not retry when it was removed from the room.
+- **Server logs**: rejected connections are logged with the reason (`missing ticket`, `invalid or expired ticket`, `origin not allowed`), and a missing `WS_TOKEN_SECRET` is reported at startup.
 - **Limits**: 1 MiB max WebSocket message, 50 messages/second per connection, structural validation of shapes on both the socket and the save API.
 
 ##  Testing

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import axios from "axios";
@@ -27,6 +27,7 @@ import { handleDownload } from "../../../draw/download";
 import { Loader } from "@repo/ui/loader";
 import { Share } from "@repo/ui/share";
 import { Removed } from "@repo/ui/removed";
+import { backoffDelay, closeAction } from "../../lib/reconnect";
 
 export default function Whiteboard() {
   const params = useParams();
@@ -57,6 +58,8 @@ export default function Whiteboard() {
   const [mode, setMode] = useState<"dark" | "light">("dark");
   const [shapeMode, setShapeMode] = useState<"rect" | "circle" | "line" | "text" | "pan" | "arrow" | "pencil" | "eraser">("rect");
   const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [connection, setConnection] = useState<"connecting" | "open" | "reconnecting" | "failed">("connecting");
+  const [strokesVersion, setStrokesVersion] = useState(0);
   const [isAdmin, setIsAdmin] = useState(false);
   const [downloadFormat, setDownloadFormat] = useState<"pdf" | "png" | "jpg">("jpg");
   const [download, setDownload] = useState<boolean>(false);
@@ -64,7 +67,26 @@ export default function Whiteboard() {
 
   const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3000";
 
-  const { saveStroke, eraseStroke } = useStrokePersistence(roomId as string);
+  const { saveStroke, eraseStroke, forgetStroke } = useStrokePersistence(roomId as string);
+
+  // A primitive, so effects don't re-run every time next-auth refetches the
+  // session (it does on every tab refocus and hands back a new object).
+  const userEmail = session?.user?.email ?? null;
+
+  // Merge saved strokes into the array the canvas already holds (never replace
+  // it), then ask the canvas effect to re-initialise so they get drawn.
+  const syncStrokes = useCallback(async () => {
+    try {
+      const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
+      const known = new Set(shapesRef.current.map((s) => s.strokeId));
+      for (const s of res.data.strokesDetail ?? []) {
+        if (!known.has(s.strokeId)) shapesRef.current.push(s);
+      }
+      setStrokesVersion((v) => v + 1);
+    } catch (error) {
+      console.log(`Error fetching strokes: ${error}`);
+    }
+  }, [roomId]);
 
   const RoomCheck = async () => {
     try {
@@ -73,7 +95,7 @@ export default function Whiteboard() {
         router.push("/home");
       else {
         setValidRoom(true);
-        if (session?.user.email === res.data.adminEmail) {
+        if (userEmail === res.data.adminEmail) {
           adminEmailRef.current = res.data.adminEmail;
           setIsAdmin(true);
         }
@@ -85,89 +107,143 @@ export default function Whiteboard() {
 
   useEffect(() => {
     RoomCheck();
-  }, [roomId, session]);
+  }, [roomId, userEmail]);
 
   useEffect(() => {
-    if (status !== "authenticated" || socket || !validRoom) return;
+    if (status !== "authenticated" || !validRoom || !userEmail) return;
 
-    let cancelled = false;
+    let disposed = false;
+    let connecting = false;
     let ws: WebSocket | null = null;
+    let failures = 0; // consecutive failed attempts; reset once a socket opens
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-    (async () => {
-      let token: string;
+    const giveUp = () => {
+      setConnection("failed");
+      setLoading(false); // let the "disconnected" banner show instead of the spinner
+    };
+
+    const scheduleRetry = () => {
+      failures++;
+      if (closeAction(0, failures) === "exhausted") return giveUp();
+      setConnection("reconnecting");
+      retryTimer = setTimeout(connect, backoffDelay(failures));
+    };
+
+    const connect = async () => {
+      if (disposed || connecting) return;
+      connecting = true;
+      retryTimer = null;
       try {
-        // Short-lived, room-scoped ticket; identity and admin role are decided server-side.
-        const res = await axios.get("/api/ws-token", { params: { slug: roomId } });
-        token = res.data.token;
-      } catch (error) {
-        console.log("Could not get a WebSocket ticket:", error);
-        if (!cancelled) router.push("/home");
-        return;
-      }
-      if (cancelled) return;
-
-      ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
-
-      ws.onopen = () => {
-        ws!.send(JSON.stringify({ type: "join-room", roomId }));
-        setLoading(false);
-        console.log("WebSocket connected");
-      };
-
-      ws.onmessage = (event: MessageEvent) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === "not-allowed") {
-          router.push("/home");
-        }
-        if (msg.type === "room-joined") {
-          joinedRef.current = { email: msg.email, name: msg.name };
-          existingClientsRef.current = msg.existingClients;
-          setJoined(true);
-          if (joinedTimeout.current) clearTimeout(joinedTimeout.current);
-          joinedTimeout.current = setTimeout(() => setJoined(false), 2000);
-        }
-        if (msg.type === "existing-client")
-          existingClientsRef.current = msg.existingClients;
-        if (msg.type === "remove-user") {
-          const email = msg.data.email;
-          if (email === session?.user.email) {
-            setRemoved(true);
-            setTimeout(() => router.push("/home"), 2000);
+        let token: string;
+        try {
+          // Short-lived, room-scoped ticket; identity and admin role are decided server-side.
+          const res = await axios.get("/api/ws-token", { params: { slug: roomId } });
+          token = res.data.token;
+        } catch (error) {
+          const code = axios.isAxiosError(error) ? error.response?.status : undefined;
+          if (code === 401 || code === 403 || code === 404) {
+            if (!disposed) router.push("/home"); // not signed in / room is gone
+          } else if (!disposed) {
+            scheduleRetry(); // network blip or a cold-starting server
           }
+          return;
         }
-        if (msg.type === "room-left") {
-          leftRef.current = { email: msg.email, name: msg.name };
-          existingClientsRef.current = msg.existingClients;
-          setLeft(true);
-          if (leftTimeout.current) clearTimeout(leftTimeout.current);
-          leftTimeout.current = setTimeout(() => setLeft(false), 2000);
-        }
-      };
+        if (disposed) return;
 
-      setSocket(ws);
-      ws.onclose = () => console.log("WebSocket disconnected");
-      ws.onerror = (err) => console.log("WebSocket error:", err);
-    })();
+        // After a drop, pick up what others drew while we were away.
+        if (failures > 0) await syncStrokes();
+        if (disposed) return;
+
+        const next = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
+        ws = next;
+
+        next.onopen = () => {
+          failures = 0;
+          next.send(JSON.stringify({ type: "join-room", roomId }));
+          setConnection("open");
+          setLoading(false);
+          setSocket(next);
+          console.log("WebSocket connected");
+        };
+
+        next.onmessage = (event: MessageEvent) => {
+          const msg = JSON.parse(event.data);
+          if (msg.type === "not-allowed") {
+            router.push("/home");
+          }
+          if (msg.type === "room-joined") {
+            joinedRef.current = { email: msg.email, name: msg.name };
+            existingClientsRef.current = msg.existingClients;
+            setJoined(true);
+            if (joinedTimeout.current) clearTimeout(joinedTimeout.current);
+            joinedTimeout.current = setTimeout(() => setJoined(false), 2000);
+          }
+          if (msg.type === "existing-client")
+            existingClientsRef.current = msg.existingClients;
+          if (msg.type === "remove-user") {
+            if (msg.data.email === userEmail) {
+              setRemoved(true);
+              setTimeout(() => router.push("/home"), 2000);
+            }
+          }
+          if (msg.type === "room-left") {
+            leftRef.current = { email: msg.email, name: msg.name };
+            existingClientsRef.current = msg.existingClients;
+            setLeft(true);
+            if (leftTimeout.current) clearTimeout(leftTimeout.current);
+            leftTimeout.current = setTimeout(() => setLeft(false), 2000);
+          }
+        };
+
+        next.onerror = (err) => console.log("WebSocket error:", err);
+
+        next.onclose = (ev) => {
+          console.log("WebSocket disconnected", ev.code);
+          if (disposed || ws !== next) return;
+          ws = null;
+          setSocket(null); // stops the canvas from drawing into a dead socket
+
+          const action = closeAction(ev.code, failures + 1);
+          if (action === "retry") scheduleRetry();
+          else if (action === "exhausted") giveUp();
+          // "forbidden": removed / wrong room / origin. The server already told
+          // us via "remove-user" or "not-allowed", which handle the redirect.
+        };
+      } finally {
+        connecting = false;
+      }
+    };
+
+    // Coming back to the tab (or the network) is the best moment to retry now
+    // instead of waiting out the backoff timer.
+    const wake = () => {
+      if (disposed || document.visibilityState === "hidden") return;
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      failures = 0;
+      setConnection((c) => (c === "failed" ? "reconnecting" : c));
+      connect();
+    };
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("online", wake);
+
+    connect();
 
     return () => {
-      cancelled = true;
+      disposed = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("online", wake);
       ws?.close();
+      setSocket(null);
     };
-  }, [status, session, roomId, validRoom]);
+  }, [status, userEmail, roomId, validRoom]);
 
   useEffect(() => {
-    const fetchStrokes = async () => {
-      if (!validRoom)
-        return;
-      try {
-        const res = await axios.get(`/api/strokes/get?slug=${roomId}`);
-        shapesRef.current = res.data.strokesDetail;
-      } catch (error) {
-        console.log(`Error fetching strokes: ${error}`);
-      }
-    };
-    fetchStrokes();
-  }, [validRoom]);
+    if (validRoom) syncStrokes();
+  }, [validRoom, syncStrokes]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -194,7 +270,8 @@ export default function Whiteboard() {
       panStartX,
       panStartY,
       offsetX,
-      offsetY
+      offsetY,
+      forgetStroke
     );
 
     return () => {
@@ -202,7 +279,7 @@ export default function Whiteboard() {
       if (cleanup)
         cleanup();
     };
-  }, [mode, shapeMode, socket, isAdmin, loading]);
+  }, [mode, shapeMode, socket, isAdmin, loading, strokesVersion]);
 
   if (!validRoom) return (
     <div className="flex justify-center items-center gap-2 text-xl md:text-2xl text-white bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 min-h-screen">
@@ -272,7 +349,25 @@ export default function Whiteboard() {
         ))}
       </div>
 
-      <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full cursor-crosshair" onClick={() => {
+      {(connection === "reconnecting" || connection === "failed") && (
+        <div
+          role="status"
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-50 rounded-xl bg-amber-400 px-4 py-2 text-sm font-medium text-black shadow-lg"
+        >
+          {connection === "reconnecting" ? (
+            "Connection lost. Reconnecting…"
+          ) : (
+            <>
+              Disconnected.{" "}
+              <button className="underline" onClick={() => window.location.reload()}>
+                Reload to rejoin
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      <canvas id="draw-canvas" ref={canvasRef} className="w-full h-full cursor-crosshair" style={{ pointerEvents: connection === "open" ? "auto" : "none" }} onClick={() => {
         setDownload(false)
         setParticipants(false)
         setShare(false)

@@ -24,6 +24,8 @@ export function verifyWsToken(
     const p = jwt.verify(token, secret, {
       algorithms: ["HS256"],
       audience: WS_AUDIENCE,
+      // Vercel and the WS host don't share a clock.
+      clockTolerance: 30,
     }) as Record<string, unknown>;
 
     if (

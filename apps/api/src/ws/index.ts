@@ -17,7 +17,12 @@ type Client = {
   windowCount: number;
 };
 
+type Logger = Pick<Console, "warn" | "error">;
+
 export type WebSktOptions = {
+  /** Ping interval; clients that miss a pong are terminated. Default 25s. */
+  heartbeatMs?: number;
+  logger?: Logger;
   /** Comma-separated list of allowed Origins. Empty/undefined = don't check. */
   allowedOrigins?: string;
   /** Overrides process.env.WS_TOKEN_SECRET (used by tests). */
@@ -40,11 +45,34 @@ function isDrawData(d: any): d is { strokeId: string; shape: { type: string } } 
 
 export function WebSkt(server: Server, opts: WebSktOptions = {}) {
   const wss = new WebSocketServer({ server, maxPayload: MAX_PAYLOAD_BYTES });
+  const log = opts.logger ?? console;
 
+  // "https://app.com/" and "https://APP.com" should both match "https://app.com".
+  const normalizeOrigin = (o: string) => o.trim().replace(/\/+$/, "").toLowerCase();
   const allowedOrigins = (opts.allowedOrigins ?? process.env.ALLOWED_ORIGINS ?? "")
     .split(",")
-    .map((o) => o.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
+
+  if (!(opts.tokenSecret ?? process.env.WS_TOKEN_SECRET)) {
+    log.error("[ws] WS_TOKEN_SECRET is not set: every connection will be rejected");
+  }
+
+  // Keeps idle connections alive through proxies and reaps dead ones.
+  const alive = new WeakMap<WebSocket, boolean>();
+  const heartbeat = setInterval(() => {
+    for (const socket of wss.clients) {
+      if (alive.get(socket) === false) {
+        socket.terminate();
+        continue;
+      }
+      alive.set(socket, false);
+      socket.ping();
+    }
+  }, opts.heartbeatMs ?? 25_000);
+  heartbeat.unref(); // never keep the process alive just for pings
+  wss.on("close", () => clearInterval(heartbeat));
+  server.on("close", () => clearInterval(heartbeat));
 
   const clients = new Map<string, Client>();
   const rooms = new Map<string, Set<string>>();
@@ -73,6 +101,7 @@ export function WebSkt(server: Server, opts: WebSktOptions = {}) {
   };
 
   const reject = (socket: WebSocket, code: number, reason: string) => {
+    log.warn(`[ws] rejected connection (${code}): ${reason}`);
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "not-allowed" }));
     }
@@ -80,13 +109,17 @@ export function WebSkt(server: Server, opts: WebSktOptions = {}) {
   };
 
   wss.on("connection", (socket, req) => {
-    if (allowedOrigins.length && !allowedOrigins.includes(req.headers.origin ?? "")) {
-      return reject(socket, 4403, "origin not allowed");
+    alive.set(socket, true);
+    socket.on("pong", () => alive.set(socket, true));
+
+    const origin = normalizeOrigin(req.headers.origin ?? "");
+    if (allowedOrigins.length && !allowedOrigins.includes(origin)) {
+      return reject(socket, 4403, `origin not allowed: "${req.headers.origin ?? ""}"`);
     }
 
     const token = new URL(req.url ?? "/", "http://localhost").searchParams.get("token");
     const claims = verifyWsToken(token, opts.tokenSecret);
-    if (!claims) return reject(socket, 4401, "unauthorized");
+    if (!claims) return reject(socket, 4401, token ? "invalid or expired ticket" : "missing ticket");
 
     const clientId = crypto.randomUUID();
     const self: Client = {

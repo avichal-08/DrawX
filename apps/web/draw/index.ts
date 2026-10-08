@@ -21,7 +21,8 @@ export function initDraw(
   panStartX: React.RefObject<number>,
   panStartY: React.RefObject<number>,
   offsetX: React.RefObject<number>,
-  offsetY: React.RefObject<number>
+  offsetY: React.RefObject<number>,
+  forgetStroke?: (strokeId: string) => void
 ) {
   if (!canvas) {
     console.error("Canvas element is null or undefined");
@@ -193,6 +194,8 @@ export function initDraw(
             existingShape.splice(index, 1);
           }
           redraw();
+          // If we drew it and haven't finished saving it, don't resurrect it in the DB.
+          if (typeof forgetStroke === "function") forgetStroke(eraseStrokeId);
         }
       }
     } catch (error) {

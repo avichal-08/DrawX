@@ -14,11 +14,12 @@ const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
 /**
  * Signs a short-lived HS256 JWT that the WebSocket server (apps/api) verifies
  * with the same WS_TOKEN_SECRET. It is only used to open a socket, so the
- * default lifetime is one minute.
+ * default lifetime is five minutes: long enough to survive a sleeping server
+ * taking a while to wake up, short enough to be useless once leaked.
  */
 export function signWsToken(
   claims: WsTokenClaims,
-  ttlSeconds = 60,
+  ttlSeconds = 300,
   secret: string | undefined = process.env.WS_TOKEN_SECRET
 ): string {
   if (!secret) throw new Error("WS_TOKEN_SECRET is not set");

@@ -27,3 +27,8 @@ test("refuses to sign without a secret", () => {
   assert.throws(() => signWsToken(claims), /WS_TOKEN_SECRET/);
   if (prev !== undefined) process.env.WS_TOKEN_SECRET = prev;
 });
+
+test("defaults to a five-minute lifetime", () => {
+  const body = JSON.parse(Buffer.from(signWsToken(claims, undefined, "k").split(".")[1]!, "base64url").toString());
+  assert.equal(body.exp - body.iat, 300);
+});

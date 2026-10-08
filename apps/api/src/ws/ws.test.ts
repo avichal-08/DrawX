@@ -8,12 +8,13 @@ import { WebSkt } from "./index";
 import { WS_AUDIENCE } from "./auth";
 
 const SECRET = "test-secret";
+const quietLogger = { warn() {}, error() {} };
 let server: http.Server;
 let port: number;
 
 before(async () => {
   server = http.createServer();
-  WebSkt(server, { tokenSecret: SECRET });
+  WebSkt(server, { tokenSecret: SECRET, heartbeatMs: 60_000, logger: quietLogger });
   await new Promise<void>((r) => server.listen(0, r));
   port = (server.address() as AddressInfo).port;
 });
@@ -77,6 +78,16 @@ async function join(token: string, room: string) {
 
 const quiet = (ms = 150) => new Promise((r) => setTimeout(r, ms));
 
+test("accepts a ticket that expired within the clock-skew tolerance", async () => {
+  const slightlyExpired = jwt.sign(
+    { email: "a@x.com", name: "A", room: "skew-1", role: "member" },
+    SECRET,
+    { audience: WS_AUDIENCE, expiresIn: -5 }
+  );
+  const c = await join(slightlyExpired, "skew-1");
+  c.ws.close();
+});
+
 test("rejects missing, forged and expired tickets", async () => {
   for (const token of [
     null,
@@ -84,7 +95,7 @@ test("rejects missing, forged and expired tickets", async () => {
     ticket({ email: "a@x.com", room: "r1" }, "wrong-secret"),
     jwt.sign({ email: "a@x.com", name: "A", room: "r1", role: "member" }, SECRET, {
       audience: WS_AUDIENCE,
-      expiresIn: -10,
+      expiresIn: -120, // well past the 30s clock tolerance
     }),
   ]) {
     const c = await connect(token);
@@ -168,4 +179,53 @@ test("room-left is broadcast with the updated roster", async () => {
   assert.equal(left.email, "b@x.com");
   assert.deepEqual(left.existingClients.map((c: any) => c.email), ["a@x.com"]);
   a.ws.close();
+});
+
+async function withServer(
+  opts: Parameters<typeof WebSkt>[1],
+  fn: (url: string) => Promise<void>
+) {
+  const srv = http.createServer();
+  WebSkt(srv, { tokenSecret: SECRET, logger: quietLogger, ...opts });
+  await new Promise<void>((r) => srv.listen(0, r));
+  try {
+    await fn(`ws://127.0.0.1:${(srv.address() as AddressInfo).port}/?token=${ticket({ email: "a@x.com", room: "r" })}`);
+  } finally {
+    srv.closeAllConnections?.();
+    srv.close();
+  }
+}
+
+test("origin allow-list ignores trailing slashes and case, and blocks others", async () => {
+  await withServer({ allowedOrigins: "https://App.example.com/, http://localhost:4000" }, async (url) => {
+    for (const origin of ["https://app.example.com", "http://localhost:4000"]) {
+      const ok = new WebSocket(url, { origin });
+      await new Promise((r) => ok.on("open", r));
+      ok.close();
+    }
+    const bad = new WebSocket(url, { origin: "https://evil.example.com" });
+    const code = await new Promise<number>((r) => bad.on("close", (c) => r(c)));
+    assert.equal(code, 4403);
+  });
+});
+
+test("server pings connected clients (keeps proxies from idling them out)", async () => {
+  await withServer({ heartbeatMs: 40 }, async (url) => {
+    const c = new WebSocket(url);
+    await new Promise<void>((resolve, reject) => {
+      c.on("ping", () => resolve());
+      setTimeout(() => reject(new Error("no ping received")), 1000);
+    });
+    c.close();
+  });
+});
+
+test("clients that stop answering pings are terminated", async () => {
+  await withServer({ heartbeatMs: 40 }, async (url) => {
+    const c = new WebSocket(url, { autoPong: false });
+    const closed = new Promise<number>((r) => c.on("close", (code) => r(code)));
+    const timeout = new Promise<string>((r) => setTimeout(() => r("still open"), 1000));
+    const result = await Promise.race([closed, timeout]);
+    assert.notEqual(result, "still open");
+  });
 });

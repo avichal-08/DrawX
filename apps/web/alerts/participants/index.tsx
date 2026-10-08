@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import type { existingClients } from "./types"
 
@@ -23,30 +23,34 @@ export const Participants = ({ existingClients, isAdmin, adminEmail, socket }: {
         }
     }
 
-    const handleWS = (event: MessageEvent) => {
-        if (!socket || !event || !event.data) return;
+    useEffect(() => {
+        if (!socket) return;
 
-        try {
-            const msg = JSON.parse(event.data);
+        const handleWS = (event: MessageEvent) => {
+            if (!event || !event.data) return;
 
-            if (!msg || typeof msg !== "object") return;
+            try {
+                const msg = JSON.parse(event.data);
 
-            if (msg.type === "remove-user") {
-                const email = msg.data.email;
-                const index = existingClients.findIndex((c) => c.email === email);
-                if (index !== -1) {
-                    existingClients.splice(index, 1);
+                if (!msg || typeof msg !== "object") return;
+
+                if (msg.type === "remove-user") {
+                    const email = msg.data.email;
+                    const index = existingClients.findIndex((c) => c.email === email);
+                    if (index !== -1) {
+                        existingClients.splice(index, 1);
+                    }
                 }
+            } catch (error) {
+                console.error("Error parsing WebSocket message:", error);
             }
-        } catch (error) {
-            console.error("Error parsing WebSocket message:", error);
-            return;
-        }
-    };
+        };
 
-    if (socket) {
+        // Previously this was attached during render and never removed, so a
+        // new listener piled up on the socket with every re-render.
         socket.addEventListener("message", handleWS);
-    }
+        return () => socket.removeEventListener("message", handleWS);
+    }, [socket, existingClients]);
 
     return (
         <div className="bg-white rounded-2xl w-fit p-1 overflow-y-scroll scrollbar-hide">
