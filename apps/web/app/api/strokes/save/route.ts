@@ -1,31 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prismaClient } from "@repo/db";
+import { requireUser } from "../../../lib/session";
+import { isValidShape, isValidStrokeId } from "../../../lib/validate";
 
-import { ShapeDetail } from "../../../../draw/types";
+const MAX_BATCH = 200;
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { slug, strokesDetail } = body;
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-    if (!slug || !strokesDetail || !Array.isArray(strokesDetail)) {
+  try {
+    const { slug, strokesDetail } = await req.json();
+
+    if (
+      typeof slug !== "string" ||
+      !Array.isArray(strokesDetail) ||
+      strokesDetail.length === 0 ||
+      strokesDetail.length > MAX_BATCH ||
+      !strokesDetail.every((s) => s && isValidStrokeId(s.strokeId) && isValidShape(s.shape))
+    ) {
       return NextResponse.json({ message: "Invalid data" }, { status: 400 });
     }
 
     const room = await prismaClient.room.findUnique({ where: { slug } });
-    
-    if (!room) {
-      return NextResponse.json({ message: "Room not found" }, { status: 404 });
-    }
+    if (!room) return NextResponse.json({ message: "Room not found" }, { status: 404 });
 
-    const strokeRecords = strokesDetail.map((stroke: ShapeDetail) => ({
-      strokeId: stroke.strokeId,
-      data: JSON.stringify(stroke.shape),
-      roomId: room.id,
-    }));
-
+    // skipDuplicates makes retries (and double-saves) idempotent.
     await prismaClient.stroke.createMany({
-      data: strokeRecords,
+      data: strokesDetail.map((s: { strokeId: string; shape: unknown }) => ({
+        strokeId: s.strokeId,
+        data: JSON.stringify(s.shape),
+        roomId: room.id,
+      })),
+      skipDuplicates: true,
     });
 
     return NextResponse.json({ message: "Strokes saved" }, { status: 200 });

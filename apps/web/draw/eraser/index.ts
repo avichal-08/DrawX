@@ -11,15 +11,16 @@ export function findStrokeUnderCursor(
             const shape = strokeDetail.shape;
 
             switch (shape.type) {
-                case "rect":
-                    if (
-                        mouseX >= shape.x &&
-                        mouseX <= shape.x + shape.width &&
-                        mouseY >= shape.y &&
-                        mouseY <= shape.y + shape.height
-                    )
+                case "rect": {
+                    // Rects dragged up/left are stored with negative width/height.
+                    const left = Math.min(shape.x, shape.x + shape.width);
+                    const right = Math.max(shape.x, shape.x + shape.width);
+                    const top = Math.min(shape.y, shape.y + shape.height);
+                    const bottom = Math.max(shape.y, shape.y + shape.height);
+                    if (mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom)
                         return strokeDetail;
                     break;
+                }
 
                 case "circle":
                     const dx = mouseX - shape.centreX;

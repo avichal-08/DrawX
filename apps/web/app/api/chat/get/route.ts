@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prismaClient } from "@repo/db";
+import { requireUser } from "../../../lib/session";
 import type { ChatMessage } from "../../../../chat/types";
 
 export async function GET(req: NextRequest)  {
+  const user = await requireUser();
+  if (!user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get("slug");
 

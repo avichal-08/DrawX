@@ -36,8 +36,8 @@ Create, draw, chat, and collaborate with others in the same room — all powered
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/DrawX.git
-cd DrawX
+git clone https://github.com/avichal-08/drawx.git
+cd drawx
 ```
 
 ### 2. Install Dependencies
@@ -48,16 +48,19 @@ pnpm install
 
 ### 3. Configure Environment Variables
 
-#####  Create a .env file in the root directory and add the following:
+##### Copy `.env.example` to `.env` (root) and fill it in:
 ```bash
-# Database
-DATABASE_URL="postgresql://username:password@localhost:5432/drawx"
-
-# Authentication
-NEXTAUTH_SECRET="your-secret"
-NEXTAUTH_URL="http://localhost:3000"
-
+cp .env.example .env
 ```
+
+| Variable | Used by | Notes |
+|---|---|---|
+| `DATABASE_URL` | web, db | Postgres connection string |
+| `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `GOOGLE_ID`, `GOOGLE_SECRET` | web | Google sign-in |
+| `WS_TOKEN_SECRET` | web **and** api | Must be identical. The web app signs a 60-second ticket (`/api/ws-token`) and the WebSocket server verifies it. |
+| `NEXT_PUBLIC_WS_URL` | web | e.g. `ws://localhost:3000` locally, `wss://…` in production |
+| `ALLOWED_ORIGINS` | api | Optional comma-separated Origin allow-list for WebSocket connections |
+
 ### 4. Setup the Database
 ##### Run Prisma migrations to initialize your database schema (inside packages/db):
 
@@ -77,6 +80,21 @@ pnpm run dev
 ```
 
 ---
+
+##  Security Model
+
+- **Sign-in** is NextAuth (Google). Every Next.js API route reads the user from the server-side session; ids and emails in request bodies are never trusted.
+- **WebSocket access** requires a short-lived ticket from `GET /api/ws-token?slug=…`. The ticket binds the user, the room and the admin role (looked up in the database) and is verified by the WebSocket server. Chat sender identity is stamped server-side, and only the room admin can remove users.
+- **Persistence**: whoever draws or erases a stroke saves it (`useStrokePersistence`), so the board no longer depends on the admin being online.
+- **Limits**: 1 MiB max WebSocket message, 50 messages/second per connection, structural validation of shapes on both the socket and the save API.
+
+##  Testing
+
+```bash
+pnpm test          # api (WebSocket auth/relay) + web (eraser hit-testing, validation, ticket signing)
+```
+
+Requires Node 22+ (the web tests run TypeScript directly with `--experimental-strip-types`). CI runs the same on every push and pull request.
 
 ##  How It Works
 

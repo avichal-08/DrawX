@@ -1,24 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prismaClient } from "@repo/db";
+import { requireUser } from "../../../lib/session";
+import { isValidStrokeId } from "../../../lib/validate";
 
 export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const { eraseStrokeId } = body;
+  const user = await requireUser();
+  if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-        if (!eraseStrokeId || typeof eraseStrokeId !== "string") {
-            return NextResponse.json({ message: "Invalid stroke id"}, { status: 400 });
-        }
-
-        await prismaClient.stroke.delete({
-            where: {
-                strokeId: eraseStrokeId
-            }
-        });
-
-        return NextResponse.json({ message: "Stroke deleted" });
-    }catch(error) {
-        console.log(`error while deleting stroke in db: ${error}`);
-        return NextResponse.json({ message: "Server error while deleting stroke from db"}, { status: 500 } )
+  try {
+    const { slug, eraseStrokeId } = await req.json();
+    if (typeof slug !== "string" || !isValidStrokeId(eraseStrokeId)) {
+      return NextResponse.json({ message: "Invalid input" }, { status: 400 });
     }
+
+    // Scoped to the room, so a stroke id from another room can't be deleted.
+    // deleteMany is idempotent: erasing an already-erased stroke is a no-op.
+    await prismaClient.stroke.deleteMany({
+      where: { strokeId: eraseStrokeId, room: { slug } },
+    });
+
+    return NextResponse.json({ message: "Stroke deleted" });
+  } catch (error) {
+    console.error(`error while deleting stroke in db: ${error}`);
+    return NextResponse.json({ message: "Server error while deleting stroke" }, { status: 500 });
+  }
 }

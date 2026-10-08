@@ -18,8 +18,7 @@ import { MdOutlineShare } from "react-icons/md";
 import { initDraw } from "../../../draw";
 import type { ShapeDetail } from "../../../draw/types";
 import { Chat } from "../../../chat";
-import { useDebouncedStrokeSave } from "../../../draw/dbFunctions/strokeSave";
-import { useEraseStroke } from "../../../draw/dbFunctions/eraseStroke";
+import { useStrokePersistence } from "../../../draw/dbFunctions/persistence";
 import { Joined } from "../../../alerts/joined";
 import { Left } from "../../../alerts/left";
 import type { existingClients } from "../../../alerts/participants/types";
@@ -63,10 +62,9 @@ export default function Whiteboard() {
   const [download, setDownload] = useState<boolean>(false);
   const [share, setShare] = useState<boolean>(false);
 
-  // const socketUrl = process.env.NEXT_WS_URL;
+  const WS_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:3000";
 
-  const saveStroke = useDebouncedStrokeSave(roomId as string, isAdmin);
-  const eraseStroke = useEraseStroke(roomId as string, isAdmin);
+  const { saveStroke, eraseStroke } = useStrokePersistence(roomId as string);
 
   const RoomCheck = async () => {
     try {
@@ -92,54 +90,69 @@ export default function Whiteboard() {
   useEffect(() => {
     if (status !== "authenticated" || socket || !validRoom) return;
 
-    const ws = new WebSocket("wss://drawx-t3sa.onrender.com");
+    let cancelled = false;
+    let ws: WebSocket | null = null;
 
-    ws.onopen = () => {
-      const email = session?.user.email;
-      const name = session?.user.name;
-      if (!email || !name) return;
-      ws.send(
-        JSON.stringify({ type: "join-room", roomId, data: "", email, name })
-      );
-      setLoading(false);
-      console.log("WebSocket connected");
-    };
+    (async () => {
+      let token: string;
+      try {
+        // Short-lived, room-scoped ticket; identity and admin role are decided server-side.
+        const res = await axios.get("/api/ws-token", { params: { slug: roomId } });
+        token = res.data.token;
+      } catch (error) {
+        console.log("Could not get a WebSocket ticket:", error);
+        if (!cancelled) router.push("/home");
+        return;
+      }
+      if (cancelled) return;
 
-    ws.onmessage = (event: MessageEvent) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "not-allowed") {
-        router.push("/home");
-      }
-      if (msg.type === "room-joined") {
-        joinedRef.current = { email: msg.email, name: msg.name };
-        existingClientsRef.current = msg.existingClients;
-        setJoined(true);
-        if (joinedTimeout.current) clearTimeout(joinedTimeout.current);
-        joinedTimeout.current = setTimeout(() => setJoined(false), 2000);
-      }
-      if (msg.type === "existing-client")
-        existingClientsRef.current = msg.existingClients;
-      if (msg.type === "remove-user") {
-        const email = msg.data.email;
-        if (email === session?.user.email) {
-          setRemoved(true);
-          setTimeout(() => router.push("/home"), 2000);
+      ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
+
+      ws.onopen = () => {
+        ws!.send(JSON.stringify({ type: "join-room", roomId }));
+        setLoading(false);
+        console.log("WebSocket connected");
+      };
+
+      ws.onmessage = (event: MessageEvent) => {
+        const msg = JSON.parse(event.data);
+        if (msg.type === "not-allowed") {
+          router.push("/home");
         }
-      }
-      if (msg.type === "room-left") {
-        leftRef.current = { email: msg.email, name: msg.name };
-        existingClientsRef.current = msg.existingClients;
-        setLeft(true);
-        if (leftTimeout.current) clearTimeout(leftTimeout.current);
-        leftTimeout.current = setTimeout(() => setLeft(false), 2000);
-      }
+        if (msg.type === "room-joined") {
+          joinedRef.current = { email: msg.email, name: msg.name };
+          existingClientsRef.current = msg.existingClients;
+          setJoined(true);
+          if (joinedTimeout.current) clearTimeout(joinedTimeout.current);
+          joinedTimeout.current = setTimeout(() => setJoined(false), 2000);
+        }
+        if (msg.type === "existing-client")
+          existingClientsRef.current = msg.existingClients;
+        if (msg.type === "remove-user") {
+          const email = msg.data.email;
+          if (email === session?.user.email) {
+            setRemoved(true);
+            setTimeout(() => router.push("/home"), 2000);
+          }
+        }
+        if (msg.type === "room-left") {
+          leftRef.current = { email: msg.email, name: msg.name };
+          existingClientsRef.current = msg.existingClients;
+          setLeft(true);
+          if (leftTimeout.current) clearTimeout(leftTimeout.current);
+          leftTimeout.current = setTimeout(() => setLeft(false), 2000);
+        }
+      };
+
+      setSocket(ws);
+      ws.onclose = () => console.log("WebSocket disconnected");
+      ws.onerror = (err) => console.log("WebSocket error:", err);
+    })();
+
+    return () => {
+      cancelled = true;
+      ws?.close();
     };
-
-    setSocket(ws);
-    ws.onclose = () => console.log("WebSocket disconnected");
-    ws.onerror = (err) => console.log("WebSocket error:", err);
-
-    return () => ws.close();
   }, [status, session, roomId, validRoom]);
 
   useEffect(() => {
