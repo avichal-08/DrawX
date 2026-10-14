@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: drawx-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 3000
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3000}
+    image: drawx-web
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      api:
+        condition: service_healthy
