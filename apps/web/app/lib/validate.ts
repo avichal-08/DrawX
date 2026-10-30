@@ -10,7 +10,12 @@ const NUMERIC_FIELDS: Record<string, string[]> = {
 
 const MAX_POINTS = 20_000;
 const MAX_TEXT = 2_000;
+const MAX_RADIUS = 10_000;
+const MAX_COORD = 1_000_000;
+const MIN_DIM = 0.1;
 const num = (v: unknown) => typeof v === "number" && Number.isFinite(v);
+const validCoord = (v: unknown) => num(v) && (v as number) >= -MAX_COORD && (v as number) <= MAX_COORD;
+const positive = (v: unknown) => num(v) && (v as number) >= MIN_DIM;
 
 /** Structural check for a Shape (see draw/types.ts) coming from an untrusted client. */
 export function isValidShape(shape: any): boolean {
@@ -21,11 +26,20 @@ export function isValidShape(shape: any): boolean {
       Array.isArray(shape.points) &&
       shape.points.length > 0 &&
       shape.points.length <= MAX_POINTS &&
-      shape.points.every((p: any) => p && num(p.x) && num(p.y))
+      shape.points.every((p: any) => p && validCoord(p.x) && validCoord(p.y))
     );
   }
-  if (!NUMERIC_FIELDS[shape.type]!.every((k) => num(shape[k]))) return false;
-  if (shape.type === "text") return typeof shape.text === "string" && shape.text.length <= MAX_TEXT;
+
+  if (shape.type === "rect") {
+    if (!validCoord(shape.x) || !validCoord(shape.y) || !positive(shape.width) || !positive(shape.height)) return false;
+  } else if (shape.type === "circle") {
+    if (!validCoord(shape.centreX) || !validCoord(shape.centreY) || !positive(shape.radius) || shape.radius > MAX_RADIUS) return false;
+  } else if (shape.type === "line" || shape.type === "arrow") {
+    if (!validCoord(shape.startX) || !validCoord(shape.startY) || !validCoord(shape.endX) || !validCoord(shape.endY)) return false;
+  } else if (shape.type === "text") {
+    if (!validCoord(shape.x) || !validCoord(shape.y) || typeof shape.text !== "string" || shape.text.length > MAX_TEXT) return false;
+  }
+
   return true;
 }
 
